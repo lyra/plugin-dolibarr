@@ -1,0 +1,202 @@
+#
+# Copyright © Lyra Network.
+# This file is part of PayZen plugin for Dolibarr. See COPYING.md for license details.
+#
+# @author    Lyra Network (https://www.lyra.com/)
+# @copyright Lyra Network
+# @license   http://www.gnu.org/licenses/gpl.html GNU General Public License (GPL v3)
+#
+
+# Dolibarr Payzen admin page.
+PAYZEN_MODULE_CONFIGURATION = Payzen-Modul-Setup
+
+# Dolibarr Payzen module description.
+PAYZEN_MODULE_DESC = Bietet Kunden Online-Zahlungen über Payzen (unter anderem Kredit- / Debitkarten). Dies kann verwendet werden, um Ihren Kunden die Möglichkeit zu geben, kostenlose Zahlungen oder Zahlungen für ein bestimmtes Dolibarr-Objekt (Rechnung, Bestellung ...) zu leisten.
+
+# Module information section.
+PAYZEN_MODULE_INFORMATION = MODULINFORMATIONEN
+PAYZEN_DEVELOPPED_BY = Entwickelt von
+PAYZEN_CONTACT_EMAIL = E-Mail-Adresse
+PAYZEN_MODULE_VERSION = Modulversion
+PAYZEN_GATEWAY_VERSION = Kompatibel mit Zahlungsschnittstelle
+
+# Payment gateway section.
+PAYZEN_PAYMENT_GATEWAY_ACCESS = ZUGANG ZAHLUNGSSCHNITTSTELLE
+PAYZEN_SITE_ID = Shop ID
+PAYZEN_SITE_ID_DESC = Die Kennung bereitgestellt.
+PAYZEN_KEY_TEST= Schlüssel im Testbetrieb
+PAYZEN_KEY_TEST_DESC = Schlüssel, das zu Testzwecken bereitgestellt wird (im Back Office verfügbar).
+PAYZEN_KEY_PROD = Schlüssel im Produktivbetrieb
+PAYZEN_KEY_PROD_DESC = Bereitgestelltes Schlüssel (im Back Office verfügbar, nachdem der Produktionsmodus aktiviert wurde).
+PAYZEN_CTX_MODE = Modus
+PAYZEN_CTX_MODE_DESC = Kontextmodus dieses Moduls.
+PAYZEN_URL_CHECK = Benachrichtigung-URL
+PAYZEN_URL_CHECK_DESC = URL zum Kopieren in das Back Office des Händlers (Konfiguration > Benachrichtigungsregeln > Benachrichtigungs-URL am Ende der Zahlungs- und Benachrichtigungs-URL über einen Vorgang aus dem Backoffice).</br> Kopieren Sie die URL in die Felder der beiden Abschnitte.
+PAYZEN_GATEWAY_URL = Plattform-URL
+PAYZEN_GATEWAY_URL_DESC = Link zur Bezahlungsplattform.
+
+# REST API section.
+PAYZEN_REST_API = REST API EINSTELLUNGEN
+PAYZEN_REST_API_DESC = REST API keys are available in your Back Office (menu: Settings > Shops > REST API keys).
+PAYZEN_REST_API_KEY_TEST = Testpasswort
+PAYZEN_REST_API_KEY_PROD = Passwort Produktion
+PAYZEN_REST_API_PUBLIC_KEY_TEST = Öffentlicher Schlüssel (Test)
+PAYZEN_REST_API_PUBLIC_KEY_PROD = Öffentlicher Produktionsschlüssel
+PAYZEN_REST_API_HMAC_256_KEY_TEST = Schlüssel HMAC-SHA-256 für Test
+PAYZEN_REST_API_HMAC_256_KEY_PROD = Schlüssel HMAC-SHA-256 für Produktion
+PAYZEN_REST_API_URL = REST API server URL
+PAYZEN_REST_API_CLIENT_STATIC_URL = JavaScript client URL
+PAYZEN_REST_API_URL_CHECK = REST API Benachrichtigung-URL
+
+# Payment page section.
+PAYZEN_PAYMENT_PAGE = ZAHLUNGSSEITE
+PAYZEN_CURRENCY = Währung
+PAYZEN_LANGUAGE = Standardsprache
+PAYZEN_LANGUAGE_DESC = Standardsprache auf Zahlungsseite.
+PAYZEN_AVAILABLE_LANGUAGES = Verfügbare Sprachen
+PAYZEN_AVAILABLE_LANGUAGES_DESC = Verfügbare Sprachen der Zahlungsseite. Nichts auswählen, um die Einstellung der Zahlungsplattform zu benutzen.
+PAYZEN_CAPTURE_DELAY = Einzugsfrist
+PAYZEN_CAPTURE_DELAY_DESC = Anzahl der Tage bis zum Einzug der Zahlung (Einstellung über Ihr Back Office).
+PAYZEN_VALIDATION_MODE = Bestätigungsmodus
+PAYZEN_VALIDATION_MODE_DESC = Bei manueller Eingabe müssen Sie Zahlungen manuell in Ihr Back Office bestätigen.
+
+# Payment page customization section.
+PAYZEN_PAGE_CUSTOMIZATION = PERSONALISIERUNG DER ZAHLUNGSSEITE
+PAYZEN_THEME_CONFIG = Oberflächenkonfiguration
+PAYZEN_THEME_CONFIG_DESC = Konfiguration zur kundenspezifischen Gestaltung der Zahlungsseite.
+PAYZEN_SHOP_NAME = Shopbezeichnung
+PAYZEN_SHOP_NAME_DESC = Shopbezeichnung zur Anzeige auf der Zahlungsseite. Feld leer lassen, um Schnittstellenkonfiguration zu verwenden.
+PAYZEN_SHOP_URL = Shop-URL
+PAYZEN_SHOP_URL_DESC = Shop-URL zur Anzeige auf der Zahlungsseite. Feld leer lassen, um Schnittstellenkonfiguration zu verwenden.
+
+# Redirection section.
+PAYZEN_RETURN_TO_SHOP = RÜCKKEHR ZUM LADEN
+PAYZEN_REDIRECT_ENABLED = Automatische Weiterleitung
+PAYZEN_REDIRECT_ENABLED_DESC = Ist diese Einstellung aktiviert, wird der Kunde am Ende des Bezahlvorgangs automatisch auf Ihre Seite weitergeleitet.
+PAYZEN_REDIRECT_SUCCESS_TIMEOUT = Zeitbeschränkung Weiterleitung im Erfolgsfall
+PAYZEN_REDIRECT_SUCCESS_TIMEOUT_DESC = Zeitspanne in Sekunden (0-300) bis zur automatischen Weiterleitung des Kunden auf Ihre Seite nach erfolgter Zahlung.
+PAYZEN_REDIRECT_SUCCESS_MESSAGE = Weiterleitungs-Nachricht im Erfolgsfall
+PAYZEN_REDIRECT_SUCCESS_MESSAGE_DESC = Nachricht, die nach erfolgter Zahlung und vor der Weiterleitung auf der Plattform angezeigt wird.
+PAYZEN_REDIRECT_ERROR_TIMEOUT = Zeitbeschränkung Weiterleitung nach Ablehnung
+PAYZEN_REDIRECT_ERROR_TIMEOUT_DESC = Zeitspanne in Sekunden (0-300) bis zur automatischen Weiterleitung des Kunden auf Ihre Seite nach fehlgeschlagener Zahlung.
+PAYZEN_REDIRECT_ERROR_MESSAGE = "Weiterleitungs-Nachricht nach Ablehnung
+PAYZEN_REDIRECT_ERROR_MESSAGE_DESC = Nachricht, die nach fehlgeschlagener Zahlung und vor der Weiterleitung auf der Plattform angezeigt wird.
+PAYZEN_RETURN_MODE = Übermittlungs-Modus
+PAYZEN_RETURN_MODE_DESC = Methode, die zur Übermittlung des Zahlungsergebnisses von der Zahlungsschnittstelle an Ihren Shop verwendet wird.
+
+# Form type section.
+PAYZEN_ADVANCED_OPTIONS = ERWEITERTE OPTIONEN
+PAYZEN_CARD_INFO_MODE = Eingabemodus für Karteninformationen
+PAYZEN_CARD_INFO_MODE_DESC = Wählen Sie die Eingabeart der Kreditkartendaten aus. Achtung, um die Daten speichern zu können, müssen Sie diese Option bei Payzen unterschrieben haben.
+PAYZEN_CARD_INFO_MODE_REDIRECT = Einspeisung der Karteninformationen in die Zahlungsschnittstelle
+PAYZEN_CARD_INFO_MODE_EMBEDDED = Eingebettete Zahlungsfelder (REST API)
+PAYZEN_CARD_INFO_MODE_EMBEDDED_POP_IN = In a pop-in
+
+# Dolibarr section.
+PAYZEN_DOLIBARR_SETTINGS = DOLIBARR-PARAMETER
+PAYZEN_DOLIBARR_BANK_ACCOUNT = Bankkonto
+PAYZEN_DOLIBARR_BANK_ACCOUNT_DESC = Standardbankkonto zur Aufzeichnung der geleisteten Geldzahlungen. Das Modul Banken und Bargeld muss aktiviert sein.
+
+# Admin page messages.
+PAYZEN_VALIDATION_MODE_AUTOMATIC = Automatisch
+PAYZEN_VALIDATION_MODE_MANUAL = Manuell
+
+PAYZEN_MODE_TEST = TEST
+PAYZEN_MODE_PRODUCTION = PRODUKTION
+
+# Payment page messages.
+PAYZEN_PAY_BUTTON = Bezahlen Sie mit Payzen
+PAYZEN_PAY_BUTTON_MESSAGE = Verschiedene Zahlungsmethoden
+PAYZEN_SANDBOX_MESSAGE = Sie befinden sich derzeit im %s "Sandbox" -Modus
+
+# Languages List.
+GERMAN = Deutsch
+ENGLISH = Englisch
+CHINESE = Chinesisch
+SPANISH = Spanisch
+FRENCH = Französisch
+ITALIAN = Italienisch
+JAPANESE = Japanisch
+DUTCH = Holländisch
+POLISH = Polnisch
+PORTUGUESE = Portugiesisch
+RUSSIAN = Russisch
+SWEDISH = Schwedisch
+TURKISH = Türkisch
+
+# Yes/No.
+NO = Nein
+YES = Ja
+
+PAYZEN_REDIRECT_MESSAGE_TEXT = Weiterleitung zum Shop in Kürze...
+
+# Return mode.
+PAYZEN_RETURN_MODE_GET = GET (URL Einstellungen)
+PAYZEN_RETURN_MODE_POST = POST (Formular)
+
+# Error messages.
+UsernameNotDefined = Benutzer ist nicht definiert
+
+# Online payment links.
+ToOfferALinkForOnlinePayment = URL für %s Zahlung
+ToOfferALinkForOnlinePaymentOnOrder = URL bietet eine %s Online Zahlungsseite für einen Kundenauftrag
+ToOfferALinkForOnlinePaymentOnInvoice = URL bietet eine %s Online Zahlungsseite für eine Kundenrechnung
+ToOfferALinkForOnlinePaymentOnContractLine = URL bietet eine %s  Online Zahlungsseite für einen Vertrag
+ToOfferALinkForOnlinePaymentOnFreeAmount = URL bietet eine %s Online Zahlungsseite für jeden Betrag ohne existierens Objekt
+ToOfferALinkForOnlinePaymentOnMemberSubscription = URL bietet eine %s Online Zahlungsseite für ein Mitgliederabo
+ToOfferALinkForOnlinePaymentOnDonation = URL bietet eine %s Online-Zahlungsseite für die Zahlung einer Spende an
+YouCanAddTagOnUrl = Es können URL-Parameter angegeben werden <b>&tag = <i>value</i></b> für jede dieser URLs (nur erforderlich für Zahlungen, die nicht mit einem Objekt verknüpft sind) kann ein eigener Zahlungskommentar-Tag hinzugefügt werden.<br>Für eine Zahlungs-URL ohne existierendes Objekt, kann der Parameter auch hinzugefügt werden <strong>&noidempotency=1</strong> so the same link with same tag can be used several times (einige Zahlungsmodi beschränken ggf. Zahlungen auf eine je unterschiedlichen Link ohne diesen Parameter)
+FollowingUrlAreAvailableToMakePayments = Für Kundenzahlungen stehen Ihnen die folgenden URLs zur Verfügung:
+
+# Return page.
+NewPayzenPaymentReceived = Neue Kartenzahlung
+NewPayzenPaymentReceivedText = Eine neue Kreditkartenzahlung wurde empfangen, hier sind die Informationen
+
+PAYZEN_PAYMENT_FORM = Zahlungsformular
+PAYZEN_THANK_FOR_PAYMENT_TEXT = Vielen Dank für Ihre Zahlung!
+PAYZEN_SUCCESS_PAYMENT_TEXT = Die Zahlung wurde erfolgreich abgeschlossen.
+PAYZEN_ERROR_PAYMENT_TEXT = Fehler bei der Zahlung!
+PAYZEN_ERROR_PAYMENT_MSG = Ein Fehler ist während dem Zahlungsvorgang unterlaufen. Versuchen Sie es später erneut.
+PAYZEN_REFUSED_PAYMENT_TEXT = Zahlung abgelehnt
+PAYZEN_REFUSED_PAYMENT_MSG = Ihre Zahlung wurde abgelehnt. Versuchen Sie es später erneut.
+PAYZEN_CANCELLED_PAYMENT_TEXT = Zahlung storniert
+PAYZEN_CANCELLED_PAYMENT_MSG = Ihre Zahlungsaufforderung wurde storniert.
+PAYZEN_ABANDONED_PAYMENT_TEXT = Abgebrochene Zahlung
+PAYZEN_ABANDONED_PAYMENT_DESC = Ihre Zahlungsaufforderung wurde aufgegeben.
+
+PAYZEN_TRY_AGAIN = Versuch es noch einmal
+PAYZEN_DETAILS = Detail...
+
+PAYZEN_PENDING_PAYMENT = Zahlung ausstehend Überprüfung
+PAYZEN_PENDING_PAYMENT_DESC = Ihre Rechnung steht noch aus.
+
+PAYZEN_INVALID_SIGNATURE = Zahlungsprozessfehler
+PAYZEN_INVALID_SIGNATURE_DESC = Ein Fehler ist während dem Zahlungsvorgang unterlaufen.<br />Kontaktieren Sie unseren Kundensupport.
+PAYZEN_INVALID_SIGNATURE_TEST_DESC = Ein Fehler ist während der Berechnung der Signatur.
+
+PAYZEN_INVALID_AMOUNT = Fehler beim Überprüfen des Betrags
+PAYZEN_INVALID_AMOUNT_DESC = Die Höhe der Zahlungsantwort unterscheidet sich vom Rechnungsbetrag.
+PAYZEN_IPN_AMOUNT = Antwortbetrag des Zahlungsservers = %s
+PAYZEN_INVOICE_AMOUNT = Ursprünglicher Rechnungsbetrag = %s
+
+PaymentCreated = Zahlung erstellt
+BankNotSet = Die Zahlung wird nicht auf dem Bankkonto verbucht.
+
+# Payment summary.
+PAYZEN_CREDITOR = Zahlungsempfänger
+PAYZEN_THIRD_PARTY = Geschäftspartner
+PAYZEN_DESIGNATION = Beschreibung
+PAYZEN_PAYMENT_ORDER_REF = Zahlung zur Bestellung %s
+PAYZEN_AMOUNT = Betrag
+PAYZEN_TO_COMPLETE = Vervollständigen
+PAYZEN_PAYMENT_CODE = Zahlungscode
+
+# Messages for admin page validations.
+PAYZEN_ERROR_SITE_ID = Die Speicherkennung ist nicht definiert.
+PAYZEN_ERROR_KEY = Das Passwort ist nicht definiert. Modus = %s
+PAYZEN_ERROR_URL_SERVER = Die Server-URL ist undefiniert. Modus = %s
+PAYZEN_ERROR_PUBLIC_KEY = Das öffentliche Passwort ist nicht definiert. Modus = %s
+PAYZEN_ERROR_HMAC_SHA_256_KEY = Der HMAC-SHA-256-Schlüssel ist nicht definiert. Modus = %s
+PAYZEN_ERROR_URL_SERVER_API = Die URL des REST-API-Servers ist undefiniert. Modus = %s
+PAYZEN_ERROR_URL_CLIENT_JS = Die JavaScript-Client-URL ist undefiniert. Modus = %s
+PAYZEN_WARNING_BANK = Bankmodul inaktiv oder kein Bankkonto erstellt.<br />Die Zahlung wird nicht auf dem Bankkonto registriert.
