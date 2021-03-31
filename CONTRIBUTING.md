@@ -1,6 +1,6 @@
-#Contributing to PayZen for Dolibarr
+#Contributing to Lyra Collect for Dolibarr
 
-Anyone is welcome to contribute to PayZen payment plugin for Dolibarr. There are various ways you can contribute:
+Anyone is welcome to contribute to Lyra Collect payment plugin for Dolibarr. There are various ways you can contribute:
 
 - Raise an issue on GitHub.
 - Send us a Pull Request on **develop** branch with your bug fixes.
