@@ -1,10 +1,10 @@
 # Lyra Collect for Dolibarr
 
-Lyra Collect for Dolibarr is an open source plugin that links e-commerce websites based on Dolibarr to Lyra Collect secure payment gateway developed by [Lyra Network](https://www.lyra.com/).
+Lyra Collect for Dolibarr is an open source payment plugin developed by [Lyra Network](https://www.lyra.com/) for Dolibarr ERP. It allows you to manage your organization payment activities.
 
 ## Installation & Upgarde
 
-If a previous version of the Lyra Collect module is installed on your shop, you must uninstall it before adding. Connect to your FTP server and delete the plugin files and directories.
+If a previous version of the Lyra Collect module is installed on your Dolibarr ERP, you must uninstall it before adding. Connect to your FTP server and delete the plugin files and directories.
 
 **Do not forget to backup your module settings.**
 
@@ -62,7 +62,7 @@ In Dolibarr administration interface:
 - Go to `Interfaces with external systems` section.
 - Click on `Enable/Disable` button corresponding to the `Lyra Module` entry to activate it.
 
-Open module configuration by clicking the `setup` icon in the module row, and configure your store parameters and credentials from Lyra Expert Back Office.
+Open module configuration by clicking the `setup` icon in the module row, and configure your parameters and credentials from your Lyra Expert Back Office.
 
 ## License
 

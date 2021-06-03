@@ -7,11 +7,11 @@
 # @license   http://www.gnu.org/licenses/gpl.html GNU General Public License (GPL v3)
 #
 
-# Dolibarr Lyra admin page.
-LYRA_MODULE_CONFIGURATION = Lyra module setup
+# Dolibarr admin page.
+LYRA_MODULE_CONFIGURATION = Lyra Collect module setup
 
-# Dolibarr Lyra module description.
-LYRA_MODULE_DESC = Offers customers online payments via Lyra (credit / debit cards, among others). This can be used to allow your customers to make free payments or payments on a particular Dolibarr object (invoice, order ...).
+# Dolibarr module description.
+LYRA_MODULE_DESC = Offers customers online payments via Lyra Collect (credit / debit cards, among others). This can be used to allow your customers to make free payments or payments on a particular Dolibarr object (invoice, order ...).
 
 # Module information section.
 LYRA_MODULE_INFORMATION = MODULE INFORMATION
@@ -30,8 +30,10 @@ LYRA_KEY_PROD = Key in production mode
 LYRA_KEY_PROD_DESC = Key provided for production mode (available in Back Office after enabling production mode).
 LYRA_CTX_MODE = Mode
 LYRA_CTX_MODE_DESC = The context mode of this module.
+LYRA_SIGN_ALGO = Signature algorithm
+LYRA_SIGN_ALGO_DESC = Algorithm used to compute the payment form signature. You must select HMAC-SHA-256 on your Back Office.
 LYRA_URL_CHECK = Instant Payment Notification URL
-LYRA_URL_CHECK_DESC = URL to copy into your Merchant Back Office (Settings > Notification rules > Notification URL at the end of payment and Notification URL about an operation coming from the Backoffice).</br> Copy the URL in the fields of the two sections.
+LYRA_URL_CHECK_DESC = URL to copy into your Merchant Back Office (Settings > Notification rules > Notification URL at the end of payment and Notification URL about an operation coming from the Back Office). Copy the URL in the fields of the two sections.
 LYRA_GATEWAY_URL = Payment page URL
 LYRA_GATEWAY_URL_DESC = Link to the payment page.
 
@@ -87,17 +89,18 @@ LYRA_RETURN_MODE_DESC = Method that will be used for transmitting the payment re
 # Form type section.
 LYRA_ADVANCED_OPTIONS = ADVANCED OPTIONS
 LYRA_CARD_INFO_MODE = Card data entry mode
-LYRA_CARD_INFO_MODE_DESC = Select how the card data will be entered. Attention, to use bank data acquisition on the merchant site, you must ensure that you have subscribed to this option with Lyra.
-LYRA_CARD_INFO_MODE_REDIRECT = Bank data acquisition on payment gateway
-LYRA_CARD_INFO_MODE_EMBEDDED = Embedded payment fields (REST API)
-LYRA_CARD_INFO_MODE_EMBEDDED_POP_IN = In a pop-in
+LYRA_CARD_INFO_MODE_DESC = Select how the card data will be entered. Attention, to use bank data acquisition on the merchant site, you must ensure that you have subscribed to this option with Lyra Collect.
+LYRA_CARD_INFO_MODE_FORM = Bank data acquisition on payment gateway
+LYRA_CARD_INFO_MODE_EMBEDDED = Embedded payment fields on merchant site (REST API)
+LYRA_CARD_INFO_MODE_POPIN = Embedded payment fields in a pop-in (REST API)
 
 # Dolibarr section.
 LYRA_DOLIBARR_SETTINGS = DOLIBARR PARAMETERS
 LYRA_DOLIBARR_BANK_ACCOUNT = Bank account
-LYRA_DOLIBARR_BANK_ACCOUNT_DESC = Default bank account to save payments. The Banks and Cash module must be enabled.
+LYRA_DOLIBARR_BANK_ACCOUNT_DESC = Default bank account to save payments. The "Banks and Cash" module must be enabled.
 
 # Admin page messages.
+LYRA_VALIDATION_MODE_BACK_OFFICE_CONF = Back Office configuration
 LYRA_VALIDATION_MODE_AUTOMATIC = Automatic
 LYRA_VALIDATION_MODE_MANUAL = Manual
 
@@ -105,9 +108,9 @@ LYRA_MODE_TEST = TEST
 LYRA_MODE_PRODUCTION = PRODUCTION
 
 # Payment page message.
-LYRA_PAY_BUTTON = Pay with Lyra
+LYRA_PAY_BUTTON = Pay with Lyra Collect
 LYRA_PAY_BUTTON_MESSAGE = Variety of payment methods
-LYRA_SANDBOX_MESSAGE = You are currently in the %s "sandbox" mode
+LYRA_SANDBOX_MESSAGE = You are currently in the Lyra Collect "TEST" mode.
 
 # Languages list.
 GERMAN = German
@@ -145,14 +148,14 @@ ToOfferALinkForOnlinePaymentOnContractLine = URL to offer a %s online payment pa
 ToOfferALinkForOnlinePaymentOnFreeAmount = URL to offer a %s online payment page of any amount with no existing object
 ToOfferALinkForOnlinePaymentOnMemberSubscription = URL to offer a %s online payment page for a member subscription
 ToOfferALinkForOnlinePaymentOnDonation = URL to offer a %s online payment page for payment of a donation
-YouCanAddTagOnUrl = You can also add url parameter <b>&tag=<i>value</i></b> to any of those URL (mandatory only for payment not linked to an object) to add your own payment comment tag.<br>For the URL of payments with no existing object, you may also add the parameter <strong>&noidempotency=1</strong> so the same link with same tag can be used several times (some payment mode may limit the payment to 1 for each different link without this parameter)
+YouCanAddTagOnUrl = You can also add url parameter <b>&tag=<i>value</i></b> to any of those URL (mandatory only for payment not linked to an object) to add your own payment comment tag. For the URL of payments with no existing object, you may also add the parameter <strong>&noidempotency=1</strong> so the same link with same tag can be used several times (some payment mode may limit the payment to 1 for each different link without this parameter)
 FollowingUrlAreAvailableToMakePayments = Following URLs are available to offer a page to a customer to make a payment on Dolibarr objects
 
 # Return page messages.
 NewLyraPaymentReceived = New card payment
 NewLyraPaymentReceivedText = A new credit card payment has been received, here is the information
 
-LYRA_PAYMENT_FORM = Payment Form
+LYRA_PAYMENT_FORM = Payment form
 LYRA_THANK_FOR_PAYMENT_TEXT = Thank you for your payment!
 LYRA_SUCCESS_PAYMENT_TEXT = The payment was successful. Your payment was registered successfully.
 LYRA_ERROR_PAYMENT_TEXT = Error during payment!
@@ -171,16 +174,16 @@ LYRA_PENDING_PAYMENT = Awaiting payment verification
 LYRA_PENDING_PAYMENT_DESC = Your invoice is awaiting payment verification.
 
 LYRA_INVALID_SIGNATURE = Error during the payment process
-LYRA_INVALID_SIGNATURE_DESC = An error has occurred during the payment process.<br />Please contact our customer support.
+LYRA_INVALID_SIGNATURE_DESC = An error has occurred during the payment process. Please contact our customer support.
 LYRA_INVALID_SIGNATURE_TEST_DESC = An error has ocurred during signature calculation.
 
 LYRA_INVALID_AMOUNT = Invalid amount
 LYRA_INVALID_AMOUNT_DESC = The amount of the payment response is different from the invoice amount.
-LYRA_IPN_AMOUNT = Payment server response amount = %s
-LYRA_INVOICE_AMOUNT = Original invoice amount = %s
+LYRA_IPN_AMOUNT = Payment server response amount = %s.
+LYRA_INVOICE_AMOUNT = Original invoice amount = %s.
 
-PaymentCreated = Payment Created
-BankNotSet = Payment is not recorded in bank account
+PaymentCreated = Payment created
+BankNotSet = Payment is not recorded in bank account.
 
 # Payment summary.
 LYRA_CREDITOR = Creditor
@@ -188,15 +191,15 @@ LYRA_THIRD_PARTY = ThirdParty
 LYRA_DESIGNATION = Designation
 LYRA_PAYMENT_ORDER_REF = Order payment %s
 LYRA_AMOUNT = Amount
-LYRA_TO_COMPLETE = To Complete
+LYRA_TO_COMPLETE = To complete
 LYRA_PAYMENT_CODE = Payment code
 
 # Messages for admin page validations.
 LYRA_ERROR_SITE_ID = Shop ID is not defined.
-LYRA_ERROR_KEY = Key is not defined. Mode = %s
-LYRA_ERROR_URL_SERVER = Server URL is not defined. Mode = %s
-LYRA_ERROR_PUBLIC_KEY = Public key is not defined. Mode = %s
-LYRA_ERROR_HMAC_SHA_256_KEY = HMAC-SHA-256 key is not defined. Mode = %s
-LYRA_ERROR_URL_SERVER_API = REST API server URL is not defined. Mode = %s
-LYRA_ERROR_URL_CLIENT_JS = JavaScript client URL is not defined. Mode = %s
-LYRA_WARNING_BANK = Bank module inactive or no bank account created.<br />The payment will not be registered in the bank account.
+LYRA_ERROR_KEY = Key is not defined. Mode = %s.
+LYRA_ERROR_URL_SERVER = Server URL is not defined. Mode = %s.
+LYRA_ERROR_PUBLIC_KEY = Public key is not defined. Mode = %s.
+LYRA_ERROR_HMAC_SHA_256_KEY = HMAC-SHA-256 key is not defined. Mode = %s.
+LYRA_ERROR_URL_SERVER_API = REST API server URL is not defined. Mode = %s.
+LYRA_ERROR_URL_CLIENT_JS = JavaScript client URL is not defined. Mode = %s.
+LYRA_WARNING_BANK = Bank module inactive or no bank account created. The payment will not be registered in the bank account.
