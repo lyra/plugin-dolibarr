@@ -91,7 +91,7 @@ class ActionsLyra
 
             if ((empty($paymentmethod) || $paymentmethod == 'lyra') && ! empty($conf->lyra->enabled)) {
                 if ($conf->global->LYRA_CTX_MODE == 'TEST' || GETPOST('forcesandbox', 'int')) { // We can force sandbox with param 'forcesandbox'.
-                    dol_htmloutput_mesg($langs->trans('LYRA_SANDBOX_MESSAGE', 'Lyra'), '', 'warning');
+                    dol_htmloutput_mesg($langs->trans('LYRA_SANDBOX_MESSAGE'), '', 'warning');
                 }
 
                 if (empty($conf->banque->enabled) || empty($conf->global->LYRA_DOLIBARR_BANK_ACCOUNT) || ($conf->global->LYRA_DOLIBARR_BANK_ACCOUNT == -1)) {
@@ -213,6 +213,7 @@ class ActionsLyra
     public function doPayment($parameters, &$object, &$action, $hookmanager)
     {
         dol_include_once('/lyra/lib/lyra.lib.php');
+        dol_include_once('/lyra/core/modules/modLyra.class.php');
 
         global $conf;
 
@@ -222,10 +223,10 @@ class ActionsLyra
 
                     lyra_syslog("----------- Type Form " . $conf->global->LYRA_CARD_INFO_MODE . " -----------", $tag, LOG_INFO);
 
-                    if ($conf->global->LYRA_CARD_INFO_MODE == 'REDIRECT') {
+                    if ($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_FORM) {
                         lyraRedirectForm($tag);
-                    } elseif (($conf->global->LYRA_CARD_INFO_MODE == 'EMBEDDED') || ($conf->global->LYRA_CARD_INFO_MODE == 'POP-IN')) {
-                        $pop_in = (($conf->global->LYRA_CARD_INFO_MODE == 'EMBEDDED') ? 0 : 1);
+                    } elseif (($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_EMBEDDED) || ($conf->global->LYRA_CARD_INFO_MODE ==  modLyra::MODE_POPIN)) {
+                        $pop_in = (($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_EMBEDDED) ? 0 : 1);
                         lyraEmbeddedForm($tag, $pop_in);
                     }
 
@@ -236,4 +237,4 @@ class ActionsLyra
         $this->errors[] = 'Error message';
         return -1;
     }
- }
+}
