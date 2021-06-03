@@ -32,11 +32,11 @@ class modLyra extends DolibarrModules
     private static $REST_URL = 'https://api.lyra.com/api-payment/';
     private static $STATIC_URL = 'https://api.lyra.com/static/';
 
-    private static $CMS_IDENTIFIER = 'Dolibarr_11.x-12.x';
-    private static $PLUGIN_VERSION = '1.0.1';
+    private static $CMS_IDENTIFIER = 'Dolibarr_11.x-13.x';
+    private static $PLUGIN_VERSION = '1.0.2';
     private static $GATEWAY_VERSION = 'V2';
 
-    private static $FORM_TYPE = 'REDIRECT';
+    private static $FORM_TYPE = '1';
     private static $RETURN_MODE = 'GET';
 
     private static $REDIRECT_SUCCESS_TIMEOUT = '5';
@@ -45,6 +45,10 @@ class modLyra extends DolibarrModules
     private static $VALIDATION_MODE = '0';
 
     private static $PROCESS_URL = '/lyra/public/process.php';
+
+    const MODE_FORM = '1';
+    const MODE_EMBEDDED = '4';
+    const MODE_POPIN = '5';
 
     /**
      * Constructor. Define names, constants, directories, boxes, permissions.
@@ -119,6 +123,7 @@ class modLyra extends DolibarrModules
             8 => array('LYRA_URL_CHECK', 'chaine', dol_buildpath(self::$PROCESS_URL, 2), '', 1),
             9 => array('LYRA_URL_RETURN', 'chaine', dol_buildpath(self::$PROCESS_URL, 2), '', 1),
             10 => array('LYRA_CTX_MODE', 'chaine', self::$CTX_MODE, '', 1),
+            11 => array('LYRA_SIGN_ALGO', 'chaine', 'HMAC-SHA-256', '', 1),
             12 => array('LYRA_REST_API_URL_CHECK', 'chaine', dol_buildpath(self::$PROCESS_URL, 2), '', 1),
             13 => array('LYRA_GATEWAY_URL', 'chaine', self::$GATEWAY_URL, '', 1),
             14 => array('LYRA_REST_API_URL', 'chaine', self::$REST_URL, '', 1),

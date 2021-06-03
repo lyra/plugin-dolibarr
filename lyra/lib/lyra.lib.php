@@ -50,7 +50,7 @@ function lyraPrepareRequest($ref)
     $lyra_request->set('amount', $currency->convertAmountToInteger($amount));
 
     $dolibarr_version = (! empty($conf->global->MAIN_VERSION_FIRST_INSTALL) ? $conf->global->MAIN_VERSION_FIRST_INSTALL : $conf->global->MAIN_VERSION_LAST_INSTALL);
-    $contrib = modLyra::getDefault('CMS_IDENTIFIER') . '_' . modLyra::getDefault('PLUGIN_VERSION') . '/' . $dolibarr_version . '/' . PHP_VERSION;
+    $contrib = modLyra::getDefault('CMS_IDENTIFIER') . '_' . modLyra::getDefault('PLUGIN_VERSION') . '/' . $dolibarr_version . '/' . LyraApi::phpVersion();
     $lyra_request->set('contrib', $contrib);
 
     // Check if order exist and get Order_id, cust_id and taxe rate.
@@ -64,18 +64,18 @@ function lyraPrepareRequest($ref)
     }
 
     // Customer information.
-    $fullname = lyraSplitName(GETPOST("shipToName", 'alpha'));
+    $fullname = lyraSplitName(GETPOST('shipToName', 'alpha'));
 
-    $lyra_request->set('cust_email', GETPOST("email", 'alpha'));
+    $lyra_request->set('cust_email', GETPOST('email', 'alpha'));
     $lyra_request->set('cust_id', $result['cust_id']);
     $lyra_request->set('cust_first_name', $fullname ['first_name']);
     $lyra_request->set('cust_last_name', $fullname ['last_name']);
-    $lyra_request->set('cust_address', GETPOST("shipToStreet", 'alpha'));
-    $lyra_request->set('cust_address2', GETPOST("shipToStreet2", 'alpha'));
-    $lyra_request->set('cust_zip', GETPOST("shipToZip", 'alpha'));
-    $lyra_request->set('cust_city', GETPOST("shipToCity", 'alpha'));
-    $lyra_request->set('cust_country', GETPOST("shipToCountryCode", 'alpha'));
-    $lyra_request->set('cust_phone', GETPOST("phoneNum", 'alpha'));
+    $lyra_request->set('cust_address', GETPOST('shipToStreet', 'alpha'));
+    $lyra_request->set('cust_address2', GETPOST('shipToStreet2', 'alpha'));
+    $lyra_request->set('cust_zip', GETPOST('shipToZip', 'alpha'));
+    $lyra_request->set('cust_city', GETPOST('shipToCity', 'alpha'));
+    $lyra_request->set('cust_country', GETPOST('shipToCountryCode', 'alpha'));
+    $lyra_request->set('cust_phone', GETPOST('phoneNum', 'alpha'));
     $lyra_request->set('cust_status', $result['cust_status']);
 
     $lyra_request->addExtInfo('full_tag', $result['full_tag']);
@@ -111,36 +111,36 @@ function getLyraFormToken($ref) {
     $currency = LyraApi::findCurrencyByNumCode(getLyraEscapeVar($lyra_request, 'currency'));
 
     $params = array(
-        "amount" => getLyraEscapeVar($lyra_request, 'amount'),
-        "currency" => $currency->getAlpha3(),
-        "orderId" => getLyraEscapeVar($lyra_request, 'order_id'),
-        "customer" => array(
-            "email" => getLyraEscapeVar($lyra_request, 'cust_email'),
-            "reference" => getLyraEscapeVar($lyra_request, 'cust_id'),
-            "billingDetails" => array(
-                "address" => getLyraEscapeVar($lyra_request, 'cust_address'),
-                "address2" => getLyraEscapeVar($lyra_request, 'cust_address2'),
-                "city" => getLyraEscapeVar($lyra_request, 'cust_city'),
-                "country" => getLyraEscapeVar($lyra_request, 'cust_country'),
-                "firstName" => getLyraEscapeVar($lyra_request, 'cust_first_name'),
-                "lastName" => getLyraEscapeVar($lyra_request, 'cust_last_name'),
-                "language" => getLyraEscapeVar($lyra_request, 'language'),
-                "phoneNumber" => getLyraEscapeVar($lyra_request, 'cust_phone'),
-                "zipCode" => getLyraEscapeVar($lyra_request, 'cust_zip')
+        'amount' => getLyraEscapeVar($lyra_request, 'amount'),
+        'currency' => $currency->getAlpha3(),
+        'orderId' => getLyraEscapeVar($lyra_request, 'order_id'),
+        'customer' => array(
+            'email' => getLyraEscapeVar($lyra_request, 'cust_email'),
+            'reference' => getLyraEscapeVar($lyra_request, 'cust_id'),
+            'billingDetails' => array(
+                'address' => getLyraEscapeVar($lyra_request, 'cust_address'),
+                'address2' => getLyraEscapeVar($lyra_request, 'cust_address2'),
+                'city' => getLyraEscapeVar($lyra_request, 'cust_city'),
+                'country' => getLyraEscapeVar($lyra_request, 'cust_country'),
+                'firstName' => getLyraEscapeVar($lyra_request, 'cust_first_name'),
+                'lastName' => getLyraEscapeVar($lyra_request, 'cust_last_name'),
+                'language' => getLyraEscapeVar($lyra_request, 'language'),
+                'phoneNumber' => getLyraEscapeVar($lyra_request, 'cust_phone'),
+                'zipCode' => getLyraEscapeVar($lyra_request, 'cust_zip')
             )
         ),
-        "taxRate" => getLyraEscapeVar($lyra_request, 'tax_rate'),
-        "transactionOptions" => array(
-            "cardOptions" => array(
-                "captureDelay" => getLyraEscapeVar($lyra_request, 'capture_delay'),
-                "manualValidation" => $validation_mode,
-                "paymentSource" => 'EC'
+        'taxRate' => getLyraEscapeVar($lyra_request, 'tax_rate'),
+        'transactionOptions' => array(
+            'cardOptions' => array(
+                'captureDelay' => getLyraEscapeVar($lyra_request, 'capture_delay'),
+                'manualValidation' => $validation_mode,
+                'paymentSource' => 'EC'
             )
         ),
         'metadata' => array(
             'full_tag' => getLyraEscapeVar($lyra_request, 'full_tag', true)
         ),
-        "contrib" => getLyraEscapeVar($lyra_request, 'contrib')
+        'contrib' => getLyraEscapeVar($lyra_request, 'contrib')
     );
 
     dol_include_once('/lyra/class/LyraRest.php');
@@ -163,7 +163,7 @@ function getLyraFormToken($ref) {
                 lyra_syslog('Lyra Module (lyra.lib.php): Code =  ' . $errorCode . '; Message= ' . $errorMessage, $ref, LOG_ERR);
             } else {
                 // Extract the form token.
-                $return  = $response["answer"]["formToken"];
+                $return  = $response['answer']['formToken'];
             }
         }
 
@@ -268,13 +268,13 @@ function lyraCheckOrder($ref)
 
     global $db;
 
-    $source = (GETPOST("s", 'alpha') ? GETPOST("s", 'alpha') : GETPOST("source", 'alpha'));
+    $source = (GETPOST('s', 'alpha') ? GETPOST('s', 'alpha') : GETPOST('source', 'alpha'));
 
     $object = null;
-    $order_id = "";
-    $tax_rate = "";
-    $cust_id = "";
-    $full_tag = "";
+    $order_id = '';
+    $tax_rate = '';
+    $cust_id = '';
+    $full_tag = '';
 
     switch ($source) {
         case 'invoice':
@@ -295,7 +295,7 @@ function lyraCheckOrder($ref)
         default:
             // IVA (VAT tax) is applied only for Colombia.
             $tax_rate = lyraFindTaxRate();
-            $full_tag = GETPOST("fulltag", 'alpha');
+            $full_tag = GETPOST('fulltag', 'alpha');
             break;
     }
 
@@ -308,7 +308,7 @@ function lyraCheckOrder($ref)
 
         // If object was found (Facture, order, donation...).
         if ($result) {
-            $full_tag = GETPOST("fulltag", 'alpha');
+            $full_tag = GETPOST('fulltag', 'alpha');
 
             $order_id = $ref;
 
@@ -317,12 +317,12 @@ function lyraCheckOrder($ref)
 
             // Customer information is consulted.
             $societe = new Societe($db);
-            $result = $societe->fetch('', GETPOST("shipToName", 'alpha'), null, null, null, null, null, null, null, null, GETPOST("email", 'alpha'));
+            $result = $societe->fetch('', GETPOST('shipToName', 'alpha'), null, null, null, null, null, null, null, null, GETPOST('email', 'alpha'));
             if ($societe->code_client) {
-                $cust_status = "PRIVATE";
+                $cust_status = 'PRIVATE';
                 $cust_id = $societe->code_client;
             } elseif ($societe->code_fournisseur) {
-                $cust_status = "COMPANY";
+                $cust_status = 'COMPANY';
                 $cust_id = $societe->code_fournisseur;
             }
         } else {
@@ -343,10 +343,10 @@ function lyraFindTaxRate()
 {
     global $conf, $db;
     if ($conf->global->MAIN_INFO_SOCIETE_COUNTRY == '70:CO:Colombia') {
-        $sql="SELECT taux as vat_rate";
-        $sql.=" FROM " . MAIN_DB_PREFIX . "c_tva as t, " . MAIN_DB_PREFIX . "c_country as c";
+        $sql='SELECT taux as vat_rate';
+        $sql.=' FROM ' . MAIN_DB_PREFIX . 'c_tva as t, ' . MAIN_DB_PREFIX . 'c_country as c';
         $sql.=" WHERE t.active=1 AND t.fk_pays = c.rowid AND c.code='CO' AND t.taux <> 0";
-        $sql.=" ORDER BY t.taux ASC";
+        $sql.=' ORDER BY t.taux ASC';
         $resql=$db->query($sql);
         if ($resql) {
             $num = $db->num_rows($resql);
@@ -378,20 +378,20 @@ function lyraSplitName($full_name)
     // Words of compound lastnames.
     $special_tokens = array('da', 'de', 'del', 'la', 'las', 'los', 'mac', 'mc', 'van', 'von', 'y', 'i', 'san', 'santa');
 
-    $prev = "";
+    $prev = '';
     foreach($tokens as $token) {
         $_token = strtolower($token);
         if (in_array($_token, $special_tokens)) {
             $prev .= "$token ";
         } else {
             $names[] = $prev . $token;
-            $prev = "";
+            $prev = '';
         }
     }
 
     $num_nombres = count($names);
-    $nombres = "";
-    $apellidos = "";
+    $nombres = '';
+    $apellidos = '';
     switch ($num_nombres) {
         case 0:
             $nombres = '';
@@ -447,11 +447,11 @@ function getLyraEscapeVar($request, $var, $isExtInfo = false)
  * @param    string    $head     More header to add
  * @return   void
  */
-function llxHeaderLyra($title, $head = "")
+function llxHeaderLyra($title, $head = '')
 {
     global $conf, $langs, $mysoc;
 
-    header("Content-type: text/html; charset=" . $conf->file->character_set_client);
+    header('Content-type: text/html; charset=' . $conf->file->character_set_client);
 
     $appli = ! empty($conf->global->MAIN_APPLICATION_TITLE) ? $appli = $conf->global->MAIN_APPLICATION_TITLE : 'Dolibarr';
 

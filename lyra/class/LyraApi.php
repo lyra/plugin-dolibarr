@@ -306,5 +306,21 @@ if (! class_exists('LyraApi', false)) {
                     throw new \InvalidArgumentException("Unsupported algorithm passed : {$algo}.");
             }
         }
+
+        /**
+         * Get current PHP version without build info.
+         * @return string
+         */
+        public static function phpVersion()
+        {
+            $version = PHP_VERSION;
+
+            $match = array();
+            if (preg_match('#^\d+(\.\d+)*#', $version, $match) === 1) {
+                $version = $match[0];
+            }
+
+            return $version;
+        }
     }
 }

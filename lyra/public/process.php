@@ -11,56 +11,56 @@
 /**
  * Instant payment notification file. Wait for payment gateway confirmation, then validate order.
  */
-define("NOLOGIN",1);        // This means this output page does not require to be logged.
-define("NOCSRFCHECK",1);    // We accept to go on this page from external web site.
+define('NOLOGIN',1);        // This means this output page does not require to be logged.
+define('NOCSRFCHECK',1);    // We accept to go on this page from external web site.
 
 /**
  * Simulate pending status Dolibarr invoice.
 */
-define("PENDING_INVOICE", 2);
+define('PENDING_INVOICE', 2);
 
 // IPN messages.
-define ("ERROR_ANSWER_TYPE",'Answer Type Error. Signature or kr-hash was not found in answer. Error creating redirect form or embedded form.');
-define ("CANCELLED_STATUS_TYPE",'Cancelled status was found');
-define ("ERROR_INVALID_AMOUNT",'Invalid Amount');
-define ("ERROR_INVALID_SIGNATURE",'An error has occurred in the calculation of the signature');
-define ("PENDING_STATUS",'Payment Pending Verification');
-define ("SUCCESSFUL_PAYMENT",'Successful Payment');
-define ("ERROR_PAYMENT",'Payment Error');
-define ("SUCCESSFUL_ALREADY_PAYMENT", 'Payment Already Made');
-define ("NOT_BANK_PAYMENT", 'Payment is not recorded in bank account');
+define ('ERROR_ANSWER_TYPE','Answer Type Error. Signature or kr-hash was not found in answer. Error creating redirect form or embedded form.');
+define ('CANCELLED_STATUS_TYPE','Cancelled status was found');
+define ('ERROR_INVALID_AMOUNT','Invalid Amount');
+define ('ERROR_INVALID_SIGNATURE','An error has occurred in the calculation of the signature');
+define ('PENDING_STATUS','Payment Pending Verification');
+define ('SUCCESSFUL_PAYMENT','Successful Payment');
+define ('ERROR_PAYMENT','Payment Error');
+define ('SUCCESSFUL_ALREADY_PAYMENT', 'Payment Already Made');
+define ('NOT_BANK_PAYMENT', 'Payment is not recorded in bank account');
 
 $res=0;
 
 // Try master.inc.php using relative path.
-if (! $res && file_exists("../master.inc.php")) {
-    $res = @include "../master.inc.php";
+if (! $res && file_exists('../master.inc.php')) {
+    $res = @include '../master.inc.php';
 }
 
-if (! $res && file_exists("../../master.inc.php")) {
-    $res = @include "../../master.inc.php";
+if (! $res && file_exists('../../master.inc.php')) {
+    $res = @include '../../master.inc.php';
 }
 
-if (! $res && file_exists("../../../master.inc.php")) {
-    $res = @include "../../../master.inc.php";
+if (! $res && file_exists('../../../master.inc.php')) {
+    $res = @include '../../../master.inc.php';
 }
 
-if (! $res && file_exists("../../../../main.inc.php")) {
-    $res = @include("../../../../main.inc.php");
+if (! $res && file_exists('../../../../main.inc.php')) {
+    $res = @include('../../../../main.inc.php');
 }
 
-dol_include_once("/lyra/lib/lyra.lib.php");
+dol_include_once('/lyra/lib/lyra.lib.php');
 
 // Security check.
 if (empty($conf->lyra->enabled)) {
     accessforbidden('', 1, 1, 1);
 }
 
-$langs->load("main");
-$langs->load("other");
-$langs->load("dict");
-$langs->load("lyra@lyra");
-$langs->loadLangs(array("main", "other", "dict", "bills", "companies", "errors")); // File with generic data.
+$langs->load('main');
+$langs->load('other');
+$langs->load('dict');
+$langs->load('lyra@lyra');
+$langs->loadLangs(array('main', 'other', 'dict', 'bills', 'companies', 'errors')); // File with generic data.
 
 require_once DOL_DOCUMENT_ROOT . '/core/lib/company.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/compta/paiement/class/paiement.class.php';
@@ -73,7 +73,7 @@ require_once DOL_DOCUMENT_ROOT . '/don/class/don.class.php';
 
 dol_include_once('/lyra/core/modules/modLyra.class.php');
 dol_include_once('/lyra/class/LyraResponse.php');
-require_once DOL_DOCUMENT_ROOT . "/core/lib/admin.lib.php";
+require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
 
 global $conf, $notification_type;
 
@@ -97,7 +97,7 @@ if (GETPOSTISSET('signature')) {
 
     // Check the authenticity of the request.
     if (! $lyra_response->isAuthentified()) {
-        lyra_syslog("Invalid signature with data: " . print_r($data, true), '', LOG_ERR);
+        lyra_syslog('Invalid signature with data: ' . print_r($data, true), '', LOG_ERR);
         print_notification_message($data, $source, 'INVALID_SIGNATURE', ERROR_INVALID_SIGNATURE);
     }
 } elseif (GETPOSTISSET('kr-hash')) {
@@ -106,7 +106,7 @@ if (GETPOSTISSET('signature')) {
 
     // Check the authenticity of the request.
     if (! modLyra::checkHash($_POST, $key)) {
-        lyra_syslog("Invalid signature with data: " . print_r($_POST, true), '', LOG_ERR);
+        lyra_syslog('Invalid signature with data: ' . print_r($_POST, true), '', LOG_ERR);
         print_notification_message($data, $source, 'INVALID_SIGNATURE', ERROR_INVALID_SIGNATURE);
     }
 
@@ -120,7 +120,7 @@ if (GETPOSTISSET('signature')) {
 }
 
 if ($notification_type !== 'IPN') {
-    llxHeaderLyra($langs->trans("LYRA_PAYMENT_FORM"));
+    llxHeaderLyra($langs->trans('LYRA_PAYMENT_FORM'));
 }
 
 $amount = $lyra_response->get('amount');
@@ -130,7 +130,7 @@ $order_id = $lyra_response->get('order_id');
 $full_tag = $lyra_response->getExtInfo('full_tag');
 $trans_status = $lyra_response->get('trans_status');
 
-lyra_syslog("----------- NOTIFICATION TYPE = " . $notification_type . " -----------", $order_id, LOG_INFO);
+lyra_syslog('----------- NOTIFICATION TYPE = ' . $notification_type . ' -----------', $order_id, LOG_INFO);
 
 // Get payment source (INVOICE, ORDER, FREE, DONATION...)
 $source = getSourceType($full_tag);
@@ -184,9 +184,9 @@ if ($lyra_response->isAcceptedPayment()) {
                   $note_private = substr($note_private, $pos + 2);
                }
 
-               $sql = "UPDATE " . MAIN_DB_PREFIX . "facture SET ";
+               $sql = 'UPDATE ' . MAIN_DB_PREFIX . 'facture SET ';
                $sql .= " note_private='" . $note_private . "'";
-               $sql .= " WHERE rowid = " . $id;
+               $sql .= ' WHERE rowid = ' . $id;
                $resql = $db->query($sql);
                if (! $resql) {
                   $error++;
@@ -214,7 +214,7 @@ if ($lyra_response->isAcceptedPayment()) {
 
                 $paymentTypeId = $conf->global->LYRA_PAYMENT_MODE_FOR_PAYMENTS;
                 if (empty($paymentTypeId)) {
-                    $paymentType = $_SESSION["paymentType"];
+                    $paymentType = $_SESSION['paymentType'];
                     if (empty($paymentType)) {
                         $paymentType = 'VAD';
                     }
@@ -238,8 +238,8 @@ if ($lyra_response->isAcceptedPayment()) {
                         $num_payment = $paiement->num_payment;
                         $note = $paiement->note_public;
 
-                        $sql = "INSERT INTO " . MAIN_DB_PREFIX . "paiement (entity, ref, datec, datep, amount, multicurrency_amount, fk_paiement, num_paiement, note, ext_payment_id, ext_payment_site, fk_user_creat)";
-                        $sql.= " VALUES (" . $conf->entity . ", '" . $db->escape($refPayment) . "', '" . $db->idate($now) . "', '" . $db->idate($paiement->datepaye ) . "', " . $total . ", " . $mtotal . ", " . $paiement->paiementid . ", '" . $db->escape($num_payment) . "', '" . $db->escape($note) . "', '" . $paiement->ext_payment_id . "', '" . $paiement->ext_payment_site . "', " . $user->id . ")";
+                        $sql = 'INSERT INTO ' . MAIN_DB_PREFIX . 'paiement (entity, ref, datec, datep, amount, multicurrency_amount, fk_paiement, num_paiement, note, ext_payment_id, ext_payment_site, fk_user_creat)';
+                        $sql.= ' VALUES (' . $conf->entity . ", '" . $db->escape($refPayment) . "', '" . $db->idate($now) . "', '" . $db->idate($paiement->datepaye ) . "', " . $total . ", " . $mtotal . ", " . $paiement->paiementid . ", '" . $db->escape($num_payment) . "', '" . $db->escape($note) . "', '" . $paiement->ext_payment_id . "', '" . $paiement->ext_payment_site . "', " . $user->id . ')';
 
                         $resql = $db->query($sql);
                         if ($resql) {
@@ -1176,7 +1176,7 @@ function verifyAmount($source, $data)
             }
 
             if ($notification_type !== 'IPN') {
-                $additionalInfo = array($langs->trans("LYRA_IPN_AMOUNT", $amount), $langs->trans("LYRA_INVOICE_AMOUNT", strval($factureAmount)));
+                $additionalInfo = array($langs->trans('LYRA_IPN_AMOUNT', $amount), $langs->trans('LYRA_INVOICE_AMOUNT', strval($factureAmount)));
             }
 
             print_notification_message($data, $source, 'INVALID_AMOUNT', ERROR_INVALID_AMOUNT . '. INVOICE AMOUNT = ' . strval($factureAmount) . '; IPN AMOUNT VALUE = ' . $amount, $additionalInfo);
@@ -1211,11 +1211,11 @@ function setStatusNotePrivate($invoice, $trans_status, $order_id)
 
     // Generate and replace new status.
     $key = '##';
-    $note_private = $key . "STATUS=" . $trans_status . $key . $note_private;
+    $note_private = $key . 'STATUS=' . $trans_status . $key . $note_private;
 
-    $sql = "UPDATE " . MAIN_DB_PREFIX . "facture SET ";
+    $sql = 'UPDATE ' . MAIN_DB_PREFIX . 'facture SET ';
     $sql .= " note_private='" . $note_private . "'";
-    $sql .= " WHERE rowid = " . $id;
+    $sql .= ' WHERE rowid = ' . $id;
 
     $resql = $db->query($sql);
     if (! $resql) {
@@ -1224,10 +1224,10 @@ function setStatusNotePrivate($invoice, $trans_status, $order_id)
 
     if (! $error) {
         $db->commit();
-        lyra_syslog("Set Private Note = " . $trans_status, $order_id);
+        lyra_syslog('Set Private Note = ' . $trans_status, $order_id);
     } else {
         $db->rollback();
-        lyra_syslog("Not Set Private Note = " . $trans_status, $order_id);
+        lyra_syslog('Not Set Private Note = ' . $trans_status, $order_id);
     }
 }
 
