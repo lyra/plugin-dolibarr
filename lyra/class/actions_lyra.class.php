@@ -81,6 +81,8 @@ class ActionsLyra
      */
     public function doAddButton($parameters, &$object, &$action, $hookmanager)
     {
+        dol_include_once('/lyra/lib/lyra.lib.php');
+
         global $conf, $langs;
 
         $error = 0; // Error counter.
@@ -89,7 +91,9 @@ class ActionsLyra
         if (in_array($parameters['currentcontext'], array('newpayment'))) { // Do something only for the context 'somecontext1' or 'somecontext2'.
             $paymentmethod = $parameters['paymentmethod'];
 
-            if ((empty($paymentmethod) || $paymentmethod == 'lyra') && ! empty($conf->lyra->enabled)) {
+            if (! empty($conf->lyra->enabled) && ! lyraCanUseCurrency() && ($conf->global->LYRA_CTX_MODE == 'TEST' || GETPOST('forcesandbox', 'int'))) {
+                dol_htmloutput_mesg($langs->trans('LYRA_UNSUPPORTED_CURRENCY_MESSAGE'), '', 'warning');
+            } elseif ((empty($paymentmethod) || $paymentmethod == 'lyra') && ! empty($conf->lyra->enabled) && lyraCanUseCurrency()) {
                 if ($conf->global->LYRA_CTX_MODE == 'TEST' || GETPOST('forcesandbox', 'int')) { // We can force sandbox with param 'forcesandbox'.
                     dol_htmloutput_mesg($langs->trans('LYRA_SANDBOX_MESSAGE'), '', 'warning');
                 }
@@ -146,13 +150,17 @@ class ActionsLyra
      */
     public function doValidatePayment($parameters, &$object, &$action, $hookmanager)
     {
+        dol_include_once('/lyra/lib/lyra.lib.php');
+
         global $conf, $langs;
 
         if (in_array($parameters['currentcontext'], array('newpayment'))) { // Do something only for the context 'somecontext1' or 'somecontext2'.
             $paymentmethod = $parameters['paymentmethod'];
             if ((empty($paymentmethod) || $paymentmethod == 'lyra') && ! empty($conf->lyra->enabled)) {
-                $langs->load("lyra");
-                $parameters['validpaymentmethod']['lyra'] = 'valid';
+                if (lyraCanUseCurrency() || $conf->global->LYRA_CTX_MODE == 'TEST' || GETPOST('forcesandbox', 'int')) {
+                    $langs->load("lyra");
+                    $parameters['validpaymentmethod']['lyra'] = 'valid';
+                }
             }
         }
 
@@ -177,6 +185,7 @@ class ActionsLyra
             $paymentmethod = $parameters['paymentmethod'];
             $source = $parameters['source'];
             $object = $parameters['object'];
+
             if ((empty($paymentmethod) || $paymentmethod == 'lyra') && ! empty($conf->lyra->enabled)) {
                 if ($source == 'order' && $object->billed) {
                     print '<br><br><span class="amountpaymentcomplete">' . $langs->trans("OrderBilledPending") . '</span>';
@@ -219,19 +228,19 @@ class ActionsLyra
 
         if (in_array($parameters['currentcontext'], array('newpayment'))) {
             if ($parameters['paymentmethod'] == 'lyra') {
-                    $tag = (empty($parameters['tag']) ? GETPOST("ref", 'alpha') : $parameters['tag']);
+                $tag = (empty($parameters['tag']) ? GETPOST("ref", 'alpha') : $parameters['tag']);
 
-                    lyra_syslog("----------- Type Form " . $conf->global->LYRA_CARD_INFO_MODE . " -----------", $tag, LOG_INFO);
+                lyra_syslog("----------- Type Form " . $conf->global->LYRA_CARD_INFO_MODE . " -----------", $tag, LOG_INFO);
 
-                    if ($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_FORM) {
-                        lyraRedirectForm($tag);
-                    } elseif (($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_EMBEDDED) || ($conf->global->LYRA_CARD_INFO_MODE ==  modLyra::MODE_POPIN)) {
-                        $pop_in = (($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_EMBEDDED) ? 0 : 1);
-                        lyraEmbeddedForm($tag, $pop_in);
-                    }
-
-                    return 0;
+                if ($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_FORM) {
+                    lyraRedirectForm($tag);
+                } elseif (($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_EMBEDDED) || ($conf->global->LYRA_CARD_INFO_MODE ==  modLyra::MODE_POPIN)) {
+                    $pop_in = (($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_EMBEDDED) ? 0 : 1);
+                    lyraEmbeddedForm($tag, $pop_in);
                 }
+
+                return 0;
+            }
         }
 
         $this->errors[] = 'Error message';

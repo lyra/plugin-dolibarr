@@ -47,11 +47,11 @@ $reshook = $hookmanager->executeHooks('doAddButton', $parameters, $object, $acti
 ```
 // This hook is used to show the embedded form to make payments.
 $parameters = [
-			'paymentmethod'  => $paymentmethod,
-			'amount'         => price2num(GETPOST("newamount"), 'MT'),
-			'tag'            => GETPOST("tag", 'alpha'),
-			'dopayment_lyra' => GETPOST('dopayment_lyra', 'alpha')
-		];
+    'paymentmethod'  => $paymentmethod,
+    'amount'         => price2num(GETPOST('newamount'), 'MT'),
+    'tag'            => GETPOST('tag', 'alpha'),
+    'dopayment_lyra' => GETPOST('dopayment_lyra', 'alpha')
+];
 $reshook = $hookmanager->executeHooks('doPayment', $parameters, $object, $action);
 ```
 

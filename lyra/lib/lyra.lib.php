@@ -8,6 +8,16 @@
  * @license   http://www.gnu.org/licenses/gpl.html GNU General Public License (GPL v3)
  */
 
+function lyraCanUseCurrency()
+{
+    dol_include_once('/lyra/class/LyraApi.php');
+
+    global $conf;
+
+    $currency = LyraApi::findCurrencyByAlphaCode($conf->currency);
+    return $currency != null;
+}
+
 /**
  * Prepare gateway request data.
  *
@@ -50,7 +60,7 @@ function lyraPrepareRequest($ref)
     $lyra_request->set('amount', $currency->convertAmountToInteger($amount));
 
     $dolibarr_version = (! empty($conf->global->MAIN_VERSION_FIRST_INSTALL) ? $conf->global->MAIN_VERSION_FIRST_INSTALL : $conf->global->MAIN_VERSION_LAST_INSTALL);
-    $contrib = modLyra::getDefault('CMS_IDENTIFIER') . '_' . modLyra::getDefault('PLUGIN_VERSION') . '/' . $dolibarr_version . '/' . LyraApi::phpVersion();
+    $contrib = modLyra::getDefault('CMS_IDENTIFIER') . '_' . modLyra::getDefault('PLUGIN_VERSION') . '/' . $dolibarr_version . '/' . LyraApi::shortPhpVersion();
     $lyra_request->set('contrib', $contrib);
 
     // Check if order exist and get Order_id, cust_id and taxe rate.
@@ -100,9 +110,8 @@ function lyraRedirectForm($ref)
     print '</script>' . "\n";
 }
 
-
-
-function getLyraFormToken($ref) {
+function getLyraFormToken($ref)
+{
     global $conf, $langs;
 
     $lyra_request = lyraPrepareRequest($ref);
