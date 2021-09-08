@@ -52,6 +52,7 @@ global $langs, $user;
 
 // Libraries.
 require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
+require_once '../lib/lyra.lib.php';
 require_once '../class/LyraApi.php';
 
 // Translations.
@@ -168,6 +169,10 @@ dol_fiche_head($head, 'settings', '', -1, 'lyra@lyra');
 // Setup page goes here.
 echo '<span class="opacitymedium">' . $langs->trans('LYRA_MODULE_DESC') . '</span><br><br>';
 
+if (! lyraCanUseCurrency()) {
+    print info_admin($langs->trans('LYRA_UNSUPPORTED_CURRENCY_MESSAGE'), 0, 0, 'error');
+}
+
 // Actions.
 if ((float) DOL_VERSION >= 6) {
     // Module responsable for updating the value of the parameters.
@@ -224,9 +229,6 @@ foreach ($arrayofparameters as $section => $item) {
 
         // Print field value.
         switch ($value['type']) {
-            case 'dolibarr_selectcurrency':
-                print $form->selectCurrency($conf->global->$key, $key, 1);
-                break;
             case 'selectarray':
                 print $form->selectarray($key, $value['data'], $conf->global->$key, 0, 0, 0, '', 0, 0, 0, '', $value['class']);
                 break;

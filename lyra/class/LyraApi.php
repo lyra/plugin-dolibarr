@@ -111,7 +111,7 @@ if (! class_exists('LyraApi', false)) {
             $currencies = array(
                 array('EUR', '978', 2), array('GBP', '826', 2), array('CAD', '124', 2), array('JPY', '392', 0),
                 array('DKK', '208', 2), array('PLN', '985', 2), array('USD', '840', 2), array('CHF', '756', 2),
-                array('NOK', '578', 2)
+                array('NOK', '578', 2), array('SEK', '752', 2)
             );
 
             $lyra_currencies = array();
@@ -311,7 +311,7 @@ if (! class_exists('LyraApi', false)) {
          * Get current PHP version without build info.
          * @return string
          */
-        public static function phpVersion()
+        public static function shortPhpVersion()
         {
             $version = PHP_VERSION;
 
@@ -321,6 +321,40 @@ if (! class_exists('LyraApi', false)) {
             }
 
             return $version;
+        }
+
+        /**
+         * Format a given list of e-mails separated by commas and render them as HTML links.
+         * @param string $emails
+         * @return string
+         */
+        public static function formatSupportEmails($emails)
+        {
+            $formatted = '';
+
+            $parts = explode(', ', $emails);
+            foreach ($parts as $part) {
+                $elts = explode(':', $part);
+                if (count($elts) === 2) {
+                    $label = trim($elts[0]) . ': ';
+                    $email = $elts[1];
+                } elseif (count($elts) === 1) {
+                    $label = '';
+                    $email = $elts[0];
+                } else {
+                    throw new \InvalidArgumentException("Invalid support e-mails string passed: {$emails}.");
+                }
+
+                $email = trim($email);
+
+                if (! empty($formatted)) {
+                    $formatted .= '<br />';
+                }
+
+                $formatted .= $label . '<a href="mailto:' . $email . '">' . $email . '</a>';
+            }
+
+            return $formatted;
         }
     }
 }
