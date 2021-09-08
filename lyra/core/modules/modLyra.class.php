@@ -32,8 +32,8 @@ class modLyra extends DolibarrModules
     private static $REST_URL = 'https://api.lyra.com/api-payment/';
     private static $STATIC_URL = 'https://api.lyra.com/static/';
 
-    private static $CMS_IDENTIFIER = 'Dolibarr_11.x-13.x';
-    private static $PLUGIN_VERSION = '1.0.2';
+    private static $CMS_IDENTIFIER = 'Dolibarr_11.x-14.x';
+    private static $PLUGIN_VERSION = '1.0.3';
     private static $GATEWAY_VERSION = 'V2';
 
     private static $FORM_TYPE = '1';

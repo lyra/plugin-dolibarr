@@ -110,6 +110,7 @@ LYRA_MODE_PRODUCTION = PRODUKTION
 # Payment page messages.
 LYRA_PAY_BUTTON = Bezahlen Sie mit Lyra Collect
 LYRA_PAY_BUTTON_MESSAGE = Verschiedene Zahlungsmethoden
+LYRA_UNSUPPORTED_CURRENCY_MESSAGE = Lyra Collect unterstützt nicht die Devise Ihre Konfiguration.
 LYRA_SANDBOX_MESSAGE = Sie befinden sich derzeit im Lyra Collect "TEST" Modus.
 
 # Languages List.
