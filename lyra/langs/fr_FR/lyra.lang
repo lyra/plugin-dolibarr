@@ -18,36 +18,31 @@ LYRA_MODULE_INFORMATION = INFORMATIONS SUR LE MODULE
 LYRA_DEVELOPPED_BY = Développé par
 LYRA_CONTACT_EMAIL = Courriel de contact
 LYRA_MODULE_VERSION = Version du module
-LYRA_GATEWAY_VERSION = Version de la plateforme
+LYRA_CLICK_HERE = Cliquer ici
+LYRA_MODULE_DOC_LINK = Cliquer pour accéder à la documentation de configuration du module
 
 # Payment Gateway section.
 LYRA_PAYMENT_GATEWAY_ACCESS = ACCÈS À LA PLATEFORME
 LYRA_SITE_ID = Identifiant de la boutique
-LYRA_SITE_ID_DESC = Identifiant fourni.
+LYRA_SITE_ID_DESC = Identifiant fourni par Lyra Collect.
 LYRA_KEY_TEST = Clé en mode test
-LYRA_KEY_TEST_DESC = Clé fournie pour le mode test (disponible sur le Back Office).
+LYRA_KEY_TEST_DESC = Clé fournie pour le mode test (disponible sur le Back Office Lyra Expert).
 LYRA_KEY_PROD = Clé en mode production
-LYRA_KEY_PROD_DESC = Clé fournie (disponible sur le Back Office après passage en production).
+LYRA_KEY_PROD_DESC = Clé fournie (disponible sur le Back Office Lyra Expert après passage en production).
 LYRA_CTX_MODE = Mode
 LYRA_CTX_MODE_DESC = Mode de fonctionnement du module.
-LYRA_SIGN_ALGO = Algorithme de signature
-LYRA_SIGN_ALGO_DESC = Algorithme utilisé pour calculer la signature du formulaire de paiement. Vous devez séléctionner HMAC-SHA-256 sur votre Back Office.
 LYRA_URL_CHECK = URL de notification
-LYRA_URL_CHECK_DESC = URL à copier dans le Back Office du marchand (Configuration > Règles de notification > URL de notification à la fin du paiement et URL de notification d'une opération venant du Back Office). Copiez l'URL dans les champs des deux sections.
-LYRA_GATEWAY_URL = URL de la page de paiement
-LYRA_GATEWAY_URL_DESC = URL vers laquelle l'acheteur sera redirigé pour le paiement.
+LYRA_URL_CHECK_DESC = URL à copier dans le Back Office Lyra Expert > Paramétrage > Règles de notifications. En mode multi-boutique, l'URL de notification est la même pour toutes les boutiques.
 
 # REST API section.
 LYRA_REST_API = PARAMÈTRES DE L'API REST
-LYRA_REST_API_DESC = Les clés de l'API REST sont disponibles dans votre Back Office (menu: Paramétrage > Boutiques > Clés d'API REST).
+LYRA_REST_API_DESC = Les clés de l'API REST sont disponibles dans votre Back Office Lyra Expert (menu: Paramétrage > Boutiques > Clés d'API REST).
 LYRA_REST_API_KEY_TEST = Mot de passe de test
 LYRA_REST_API_KEY_PROD = Mot de passe de production
 LYRA_REST_API_PUBLIC_KEY_TEST = Clé publique de test
 LYRA_REST_API_PUBLIC_KEY_PROD = Clé publique de production
 LYRA_REST_API_HMAC_256_KEY_TEST = Clé HMAC-SHA-256 de test
 LYRA_REST_API_HMAC_256_KEY_PROD = Clé HMAC-SHA-256 de production
-LYRA_REST_API_URL = URL du serveur de l'API REST
-LYRA_REST_API_CLIENT_STATIC_URL = URL du client JavaScript
 LYRA_REST_API_URL_CHECK = URL de notification de l'API REST
 
 # Payment page section.
@@ -57,19 +52,10 @@ LYRA_LANGUAGE = Langue par défaut
 LYRA_LANGUAGE_DESC = Sélectionner la langue par défaut à utiliser sur la page de paiement.
 LYRA_AVAILABLE_LANGUAGES = Langues disponibles
 LYRA_AVAILABLE_LANGUAGES_DESC = Sélectionner les langues à proposer sur la page de paiement. Ne rien sélectionner pour utiliser la configuration de la plateforme.
-LYRA_CAPTURE_DELAY = Délai avant remise en banque
-LYRA_CAPTURE_DELAY_DESC = Le nombre de jours avant la remise en banque (paramétrable sur votre Back Office).
-LYRA_VALIDATION_MODE = Mode de validation
-LYRA_VALIDATION_MODE_DESC = En mode manuel, vous devrez confirmer les paiements dans le Back Office.
-
-# Payment page customization section.
-LYRA_PAGE_CUSTOMIZATION = PERSONNALISATION DE LA PAGE DE PAIEMENT
-LYRA_THEME_CONFIG = Configuration du thème
-LYRA_THEME_CONFIG_DESC = Configuration du thème pour personnaliser la page de paiement.
-LYRA_SHOP_NAME = Nom de la boutique
-LYRA_SHOP_NAME_DESC = Nom affiché sur la page de paiement. Laisser vide pour utiliser la configuration de la plateforme.
-LYRA_SHOP_URL = URL de la boutique
-LYRA_SHOP_URL_DESC = URL affichée sur la page de paiement. Laisser vide pour utiliser la configuration de la plateforme.
+LYRA_CAPTURE_DELAY = Délai avant remise en banque (si applicable)
+LYRA_CAPTURE_DELAY_DESC = Le nombre de jours avant la remise en banque (paramétrable sur votre Back Office Lyra Expert).
+LYRA_VALIDATION_MODE = Mode de validation (si applicable)
+LYRA_VALIDATION_MODE_DESC = En mode manuel, vous devrez confirmer les paiements dans le Back Office Lyra Expert.
 
 # Redirection section.
 LYRA_RETURN_TO_SHOP = RETOUR À LA BOUTIQUE
@@ -92,7 +78,16 @@ LYRA_CARD_INFO_MODE = Mode de saisie des données de la carte
 LYRA_CARD_INFO_MODE_DESC = Sélectionner la manière dont seront saisies les données de la carte. Attention, pour utiliser l'acquisition des données sur le site marchand, vous devez vous assurer d'avoir souscrit à cette option auprès de Lyra Collect.
 LYRA_CARD_INFO_MODE_FORM = Acquisition des données sur la plateforme de paiement
 LYRA_CARD_INFO_MODE_EMBEDDED = Champs de paiement embarqués sur le site marchand (API REST)
-LYRA_CARD_INFO_MODE_POPIN = Champs de paiement embarqués dans une pop-in (API REST)
+LYRA_CARD_INFO_MODE_EMBEDDED_EXT_WITH_LOGOS = Champs de paiement étendus embarqués sur le site marchand avec les logos (API REST)
+LYRA_CARD_INFO_MODE_EMBEDDED_EXT_WITHOUT_LOGOS = Champs de paiement étendus embarqués sur le site marchand sans les logos (API REST)
+LYRA_POPIN_MODE = Afficher dans une pop-in
+LYRA_POPIN_MODE_DESC = Cette option permet d'afficher les champs de paiement embarqués dans une pop-in.
+LYRA_EMBEDDED_THEME = Thème
+LYRA_EMBEDDED_THEME_DESC = Sélectionnez un thème à utiliser pour afficher les champs de paiement embarqués.
+LYRA_COMPACT_MODE = Mode compact
+LYRA_COMPACT_MODE_DESC = Cette option permet d'afficher les champs de paiement embarqués en mode compact.
+LYRA_RETRY_NUMBER = Nombre de tentatives de paiement
+LYRA_RETRY_NUMBER_DESC = Nombre maximum de tentatives de paiement par cartes après un paiement en échec (entre 0 et 2). Si vide, la valeur par défaut de la plateforme est 1.
 
 # Dolibarr section.
 LYRA_DOLIBARR_SETTINGS = PARAMÈTRES DOLIBARR
@@ -100,7 +95,7 @@ LYRA_DOLIBARR_BANK_ACCOUNT = Compte bancaire
 LYRA_DOLIBARR_BANK_ACCOUNT_DESC = Compte bancaire par défaut pour enregistrer les paiements effectués. Le module "Banks and Cash" doit être activé.
 
 # Admin page messages.
-LYRA_VALIDATION_MODE_BACK_OFFICE_CONF = Configuration Back Office
+LYRA_VALIDATION_MODE_BACK_OFFICE_CONF = Configuration Back Office Lyra Expert
 LYRA_VALIDATION_MODE_AUTOMATIC = Automatique
 LYRA_VALIDATION_MODE_MANUAL = Manuel
 
@@ -112,6 +107,7 @@ LYRA_PAY_BUTTON = Payer avec Lyra Collect
 LYRA_PAY_BUTTON_MESSAGE = Variété de méthodes de paiement
 LYRA_UNSUPPORTED_CURRENCY_MESSAGE = Lyra Collect ne supporte pas la devise de votre configuration.
 LYRA_SANDBOX_MESSAGE = Vous travaillez actuellement avec le mode "TEST" de Lyra Collect.
+LYRA_REST_ERROR_MSG = Une erreur s'est produite lors du traitement de votre demande de paiement. Veuillez réessayer plus tard.
 
 # Languages list.
 GERMAN = Allemand
@@ -159,24 +155,20 @@ NewLyraPaymentReceivedText = Un nouveau paiement par carte bancaire a été reç
 LYRA_PAYMENT_FORM = Formulaire de paiement
 LYRA_THANK_FOR_PAYMENT_TEXT = Merci pour votre paiement!
 LYRA_SUCCESS_PAYMENT_TEXT = Le paiement a réussi. Votre paiement est enregistré avec succès.
+LYRA_PENDING_PAYMENT_TEXT = Paiement en attente de vérification
+LYRA_PENDING_PAYMENT_MSG = Votre facture est en attente de la verification du paiement.
 LYRA_ERROR_PAYMENT_TEXT = Erreur lors du paiement!
 LYRA_ERROR_PAYMENT_MSG = Une erreur est survenue durant le processus de paiement. Veuilez réessayer plus tard.
 LYRA_REFUSED_PAYMENT_TEXT = Paiement refusé
 LYRA_REFUSED_PAYMENT_MSG = Votre paiement n'a pas été accepté. Veuilez réessayer plus tard.
 LYRA_CANCELLED_PAYMENT_TEXT = Paiement annulé
 LYRA_CANCELLED_PAYMENT_MSG = Votre demande de paiement a été annulée.
-LYRA_ABANDONED_PAYMENT_TEXT = Paiement abandonné
-LYRA_ABANDONED_PAYMENT_DESC = Votre demande de paiement a été abandonnée.
 
 LYRA_TRY_AGAIN = Réessayer
 LYRA_DETAILS = Détail...
 
-LYRA_PENDING_PAYMENT = Paiement en attente de vérification
-LYRA_PENDING_PAYMENT_DESC = Votre facture est en attente de la verification du paiement.
-
 LYRA_INVALID_SIGNATURE = Erreur de paiement
 LYRA_INVALID_SIGNATURE_DESC = Une erreur est survenue durant le processus de paiement. Veuillez contacter notre service client.
-LYRA_INVALID_SIGNATURE_TEST_DESC = Une erreur est survenue durant le calcul de la signature.
 
 LYRA_INVALID_AMOUNT = Montant invalide
 LYRA_INVALID_AMOUNT_DESC = Le montant de la réponse de paiement est différent du montant de la facture.
@@ -196,11 +188,14 @@ LYRA_TO_COMPLETE = À compléter
 LYRA_PAYMENT_CODE = Code de paiement
 
 # Messages for admin page validations.
-LYRA_ERROR_SITE_ID = L'identifiant de la boutique n'est pas défini.
-LYRA_ERROR_KEY = La clé n'est pas définie. Mode = %s.
-LYRA_ERROR_URL_SERVER = L'URL du serveur n'est pas définie. Mode = %s.
-LYRA_ERROR_PUBLIC_KEY = La clé publique n'est pas définie. Mode = %s.
-LYRA_ERROR_HMAC_SHA_256_KEY = La clé HMAC-SHA-256 n'est pas définie. Mode = %s.
-LYRA_ERROR_URL_SERVER_API = L'URL du serveur d'API REST n'est pas définie. Mode = %s.
-LYRA_ERROR_URL_CLIENT_JS = L'URL du client JavaScript n'est pas définie. Mode = %s.
+LYRA_INVALID_VALUE = Valeur invalide pour le champs '%s'
 LYRA_WARNING_BANK = Module bancaire inactif ou aucun compte bancaire créé. Le paiement ne sera pas enregistré sur le compte bancaire.
+
+LYRA_TRANSACTIONS = Transactions
+LYRA_MEANS_PAYMENT = Moyen de paiement
+LYRA_CARD_NUMBER = Numéro de la carte
+LYRA_EXPIRATION_DATE = Date d'expiration
+LYRA_TRANS_STATUS = Statut de la transaction
+LYRA_TRANS_UUID = UUID de transaction
+LYRA_THREEDS_AUTH = Authentification 3DS
+LYRA_THREEDS_AUTH_TYPE = Type d'authentification

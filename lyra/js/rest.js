@@ -56,6 +56,18 @@ var lyraInitRestEvents = function() {
     KR.onFocus(function(e) {
         $('.kr-form-error').html('');
     });
+
+    KR.onPopinClosed(function(e) {
+        $("#dolpaymenttable").hide();
+    });
+
+    KR.onFormReady(function () {
+        if (LYRA_COMPACT) {
+            KR.setFormConfig(
+                { cardForm: { layout: 'compact' }, smartForm: { layout: 'compact' }}
+            );
+        }
+    });
 };
 
 // Translate error message.

@@ -1,0 +1,201 @@
+#
+# Copyright © Lyra Network.
+# This file is part of Lyra Collect plugin for Dolibarr. See COPYING.md for license details.
+#
+# @author    Lyra Network (https://www.lyra.com/)
+# @copyright Lyra Network
+# @license   http://www.gnu.org/licenses/gpl.html GNU General Public License (GPL v3)
+#
+
+# Dolibarr admin page.
+LYRA_MODULE_CONFIGURATION = Configuração do módulo Lyra Collect
+
+# Dolibarr module description.
+LYRA_MODULE_DESC = Ofereça aos clientes a opção de pagamento online via Lyra Collect (cartões de crédito/débito, entre outros). Isso pode ser usado para permitir que seus clientes façam pagamentos gratuitos ou pagamentos referentes a um item específico do Dolibarr (fatura, pedido etc.).
+
+# Module information section.
+LYRA_MODULE_INFORMATION = INFORMAÇÕES SOBRE O MÓDULO
+LYRA_DEVELOPPED_BY = Desenvolvido por
+LYRA_CONTACT_EMAIL = Email de contato
+LYRA_MODULE_VERSION = Versão do módulo
+LYRA_CLICK_HERE = Clique aqui
+LYRA_MODULE_DOC_LINK = Clique para consultar a documentação da configuração do módulo
+
+# Payment gateway section.
+LYRA_PAYMENT_GATEWAY_ACCESS = ACESSO À PLATAFORMA
+LYRA_SITE_ID = Código da loja
+LYRA_SITE_ID_DESC = Código dado pelo Lyra Collect.
+LYRA_KEY_TEST = Chave em modo teste
+LYRA_KEY_TEST_DESC = Chave dada pelo Lyra Collect para o modo teste (disponível no Back Office Lyra Expert).
+LYRA_KEY_PROD = Chave em modo produção
+LYRA_KEY_PROD_DESC = Chave dada pelo Lyra Collect (disponível no Back Office Lyra Expert após passar em produção).
+LYRA_CTX_MODE = Modo
+LYRA_CTX_MODE_DESC = Modo de funcionamento do módulo.
+LYRA_URL_CHECK = URL de notificação
+LYRA_URL_CHECK_DESC = URL para copiar no Back Office Lyra Expert > Configurações > Regras de notificações. Em modo multi-loja, a URL de notificação é a mesma para todas as lojas.
+
+# REST API section.
+LYRA_REST_API = CHAVES DE API REST
+LYRA_REST_API_DESC = As chaves do API REST são disponíveis no seu Back Office Lyra Expert (menu: Configurações > Lojas > Chaves de API REST).
+LYRA_REST_API_KEY_TEST = Senha de teste
+LYRA_REST_API_KEY_PROD = Senha de produção
+LYRA_REST_API_PUBLIC_KEY_TEST = Chave pública de teste
+LYRA_REST_API_PUBLIC_KEY_PROD = Chave pública de produção
+LYRA_REST_API_HMAC_256_KEY_TEST = Chave HMAC-SHA-256 de teste
+LYRA_REST_API_HMAC_256_KEY_PROD = Chave HMAC-SHA-256 de produção
+LYRA_REST_API_URL_CHECK = URL de notificação da API REST
+
+# Payment page section.
+LYRA_PAYMENT_PAGE = PÁGINA DE PAGAMENTO
+LYRA_CURRENCY = Moeda
+LYRA_LANGUAGE = Idioma por default
+LYRA_LANGUAGE_DESC = Selecione o idioma default para usar na página de pagamento.
+LYRA_AVAILABLE_LANGUAGES = Idiomas disponíveis
+LYRA_AVAILABLE_LANGUAGES_DESC = Selecione os idiomas para propor na página de pagamento. Não selecionar nada para usar a configuração da plataforma.
+LYRA_CAPTURE_DELAY = Prazo de captura (se for aplicável)
+LYRA_CAPTURE_DELAY_DESC = A quantidade de dias antes da captura no banco (configurável no seu Back Office Lyra Expert).
+LYRA_VALIDATION_MODE = Modo de validação (se for aplicável)
+LYRA_VALIDATION_MODE_DESC = Em modo manual, deve confirmar os pagamentos no Back Office Lyra Expert.
+
+#  Redirection section.
+LYRA_RETURN_TO_SHOP = VOLTAR PARA A LOJA
+LYRA_REDIRECT_ENABLED = Redirecionamento automático
+LYRA_REDIRECT_ENABLED_DESC = Se ativa, o comprador será redirecionado automaticamente para seu site no final de pagamento.
+LYRA_REDIRECT_SUCCESS_TIMEOUT = Tempo antes do redirecionamento (sucesso)
+LYRA_REDIRECT_SUCCESS_TIMEOUT_DESC = Tempo em segundos (0-300) antes do redirecionamento automático do seu comprador para seu site, quando o pagamento foi realizado com sucesso.
+LYRA_REDIRECT_SUCCESS_MESSAGE = Mensagem antes do redirecionamento (sucesso)
+LYRA_REDIRECT_SUCCESS_MESSAGE_DESC = Mensagem exibida na página de pagamento antes do redirecionamento após um pagamento realizado com sucesso.
+LYRA_REDIRECT_ERROR_TIMEOUT = Tempo antes do redirecionamento (falha)
+LYRA_REDIRECT_ERROR_TIMEOUT_DESC = Tempo em segundos (0-300) antes do redirecionamento automático do seu comprador para seu site, quando o pagamento falhou.
+LYRA_REDIRECT_ERROR_MESSAGE = Mensagem antes do redirecionamento (falha)
+LYRA_REDIRECT_ERROR_MESSAGE_DESC = Mensagem exibida na página de pagamento antes do redirecionamento, quando o pagamento falhou.
+LYRA_RETURN_MODE = Modo de retorno
+LYRA_RETURN_MODE_DESC = Maneira do comprador enviar o resultado do pagamento quando voltar à loja.
+
+# Form type section.
+LYRA_ADVANCED_OPTIONS = OPÇÕES AVANÇADAS
+LYRA_CARD_INFO_MODE = Modo de digitar os dados de pagamento
+LYRA_CARD_INFO_MODE_DESC = Selecione a maneira como serão digitados os dados de pagamento. Atenção, para usar os campos de pagamento incorporados, deve verificar que contratou esta opção no Lyra Collect.
+LYRA_CARD_INFO_MODE_FORM = Aquisição dos dados na plataforma de pagamento
+LYRA_CARD_INFO_MODE_EMBEDDED = Campos de pagamento incorporados no site EC (API REST)
+LYRA_CARD_INFO_MODE_EMBEDDED_EXT_WITH_LOGOS = Campos de pagamento extendidos incorporados no site EC com logotipos (API REST)
+LYRA_CARD_INFO_MODE_EMBEDDED_EXT_WITHOUT_LOGOS = Campos de pagamento extendidos incorporados no site EC vendedor sem logotipos (API REST)
+LYRA_POPIN_MODE = Mostrar en una ventana pop-in
+LYRA_POPIN_MODE_DESC = Esta opção permite exibir os campos de pagamento incorporados en una ventana pop-in.
+LYRA_EMBEDDED_THEME = Tema
+LYRA_EMBEDDED_THEME_DESC = Selecione o tema que quer usar para exibir os campos de pagamento incorporados.
+LYRA_COMPACT_MODE = Modo compacto
+LYRA_COMPACT_MODE_DESC = Esta opção permite exibir os campos de pagamento incorporados em modo compacto.
+LYRA_RETRY_NUMBER = Quantidade de tentativas de pagamento
+LYRA_RETRY_NUMBER_DESC = Quantidade máxima de novas tentativas de pagamento com cartão após um pagamento não sucedido (entre 0 e 2). Se não preenchido, o valor default do gateway será 1.
+
+# Dolibarr section.
+LYRA_DOLIBARR_SETTINGS = PARÂMETROS DOLIBARR
+LYRA_DOLIBARR_BANK_ACCOUNT = Conta bancária
+LYRA_DOLIBARR_BANK_ACCOUNT_DESC = Conta bancária padrão para salvar pagamentos. O módulo "Bancos e Caixa" deve estar habilitado.
+
+# Admin page messages.
+LYRA_VALIDATION_MODE_BACK_OFFICE_CONF = Configuração Back Office Lyra Expert
+LYRA_VALIDATION_MODE_AUTOMATIC = Automático
+LYRA_VALIDATION_MODE_MANUAL = Manual
+
+LYRA_MODE_TEST = TESTE
+LYRA_MODE_PRODUCTION = PRODUÇÃO
+
+# Payment page message.
+LYRA_PAY_BUTTON = Pagar com Lyra Collect
+LYRA_PAY_BUTTON_MESSAGE = Variedade de métodos de pagamento
+LYRA_UNSUPPORTED_CURRENCY_MESSAGE = Lyra Collect não suporta a moeda de sua configuração.
+LYRA_SANDBOX_MESSAGE = Você está atualmente no modo "TESTE" do Lyra Collect.
+LYRA_REST_ERROR_MSG = Algo deu errado com sua solicitação. Tente novamente mais tarde.
+
+# Languages list.
+GERMAN = Alemão
+ENGLISH = Inglês
+CHINESE = Chinês
+SPANISH = Espanhol
+FRENCH = Francês
+ITALIAN = Italiano
+JAPANESE = Japonês
+DUTCH = Holandês
+POLISH = Polonês
+PORTUGUESE = Português
+RUSSIAN = Russo
+SWEDISH = Sueco
+TURKISH = Turco
+
+# Yes/No.
+NO = Não
+YES = Sim
+
+LYRA_REDIRECT_MESSAGE_TEXT = Redirecionamento para loja em alguns segundos...
+
+# Return mode.
+LYRA_RETURN_MODE_GET = GET (parâmetros na URL)
+LYRA_RETURN_MODE_POST = POST (formulário)
+
+# Error messages.
+UsernameNotDefined = Nome de usuário não está definido.
+
+# Online payment links.
+ToOfferALinkForOnlinePayment = URL para pagamento %s
+ToOfferALinkForOnlinePaymentOnOrder = URL para oferecer uma página de pagamento online %s para um pedido de venda
+ToOfferALinkForOnlinePaymentOnInvoice = URL para oferecer uma página de pagamento online %s para uma fatura de cliente
+ToOfferALinkForOnlinePaymentOnContractLine = URL para oferecer uma página de pagamento online %s para uma linha de contrato
+ToOfferALinkForOnlinePaymentOnFreeAmount = URL para oferecer uma página de pagamento online %s de qualquer valor sem objeto existente
+ToOfferALinkForOnlinePaymentOnMemberSubscription = URL para oferecer uma página de pagamento online %s para uma assinatura de membro
+ToOfferALinkForOnlinePaymentOnDonation = URL para oferecer uma página de pagamento online %s para pagamento de uma doação
+YouCanAddTagOnUrl = Você também pode adicionar o parâmetro de URL <b>&tag=<i>value</i></b> a qualquer um desses URLs (obrigatório apenas para pagamento não vinculado a um objeto) para adicionar sua própria tag de comentário de pagamento. Para a URL de pagamentos sem objeto existente, você também pode adicionar o parâmetro <strong>&noidempotency=1</strong> para que o mesmo link com a mesma tag possa ser usado várias vezes (alguns modos de pagamento podem limitar o pagamento a 1 para cada link diferente sem este parâmetro)
+FollowingUrlAreAvailableToMakePayments = As seguintes URLs estão disponíveis para oferecer uma página a um cliente para fazer um pagamento em objetos Dolibarr
+
+# Return page messages.
+NewLyraPaymentReceived = Novo pagamento com cartão
+NewLyraPaymentReceivedText = Um novo pagamento com cartão de crédito foi recebido, aqui estão as informações
+
+LYRA_PAYMENT_FORM = Formulário de pagamento
+LYRA_THANK_FOR_PAYMENT_TEXT = Obrigado pelo seu pagamento!
+LYRA_SUCCESS_PAYMENT_TEXT = O pagamento foi realizado com sucesso. Seu pedido foi salvo com sucesso.
+LYRA_PENDING_PAYMENT_TEXT = Aguardando verificação de pagamento
+LYRA_PENDING_PAYMENT_MSG = Sua fatura está aguardando verificação de pagamento.
+LYRA_ERROR_PAYMENT_TEXT = Erro durante o pagamento!
+LYRA_ERROR_PAYMENT_MSG = Ocorreu um erro durante o pagamento. Favor tentar novamente mais tarde.
+LYRA_REFUSED_PAYMENT_TEXT = Pagamento falhou
+LYRA_REFUSED_PAYMENT_MSG = Seu pagamento não foi aceito. Favor tentar novamente mais tarde.
+LYRA_CANCELLED_PAYMENT_TEXT = Pagamento cancelado
+LYRA_CANCELLED_PAYMENT_MSG = Sua solicitação de pagamento foi cancelada.
+
+LYRA_TRY_AGAIN = Tentar novamente
+LYRA_DETAILS = Detalhe...
+
+LYRA_INVALID_SIGNATURE = Erro durante o processo de pagamento
+LYRA_INVALID_SIGNATURE_DESC = Ocorreu um erro durante o processo de pagamento. Entre em contato com nosso suporte ao cliente.
+
+LYRA_INVALID_AMOUNT = Valor inválido
+LYRA_INVALID_AMOUNT_DESC = O valor da resposta de pagamento é diferente do valor da fatura.
+LYRA_IPN_AMOUNT = Valor da resposta do servidor de pagamento = %s.
+LYRA_INVOICE_AMOUNT = Valor da fatura original = %s.
+
+PaymentCreated = Pagamento criado
+BankNotSet = Pagamento não está registrado na conta bancária.
+
+# Payment summary.
+LYRA_CREDITOR = Credor
+LYRA_THIRD_PARTY = Terceiro
+LYRA_DESIGNATION = Designação
+LYRA_PAYMENT_ORDER_REF = Pagamento do pedido %s
+LYRA_AMOUNT = Valor
+LYRA_TO_COMPLETE = Para completar
+LYRA_PAYMENT_CODE = Código de pagamento
+
+# Messages for admin page validations.
+LYRA_INVALID_VALUE = Valor inválido para o campo '%s'
+LYRA_WARNING_BANK = Módulo de banco inativo ou nenhuma conta bancária criada. O pagamento não será registrado na conta bancária.
+
+LYRA_TRANSACTIONS = Transactions
+LYRA_MEANS_PAYMENT = Meio de pagamento
+LYRA_CARD_NUMBER = Número de Cartão
+LYRA_EXPIRATION_DATE = Data de vencimento
+LYRA_TRANS_STATUS = Status da transação
+LYRA_TRANS_UUID = UUID de transação
+LYRA_THREEDS_AUTH = Autenticação 3DS
+LYRA_THREEDS_AUTH_TYPE = Tipo de autenticação

@@ -5,7 +5,7 @@
  *
  * @author    Lyra Network (https://www.lyra.com/)
  * @copyright Lyra Network
- * @license   http://www.gnu.org/licenses/gpl.html GNU General Public License (GPL v3)
+ * @license   http://www.gnu.org/licenses/gpl.html GNU General Public License (GPL v3)_
  */
 
 /**
@@ -19,15 +19,6 @@ define('NOCSRFCHECK',1);    // We accept to go on this page from external web si
 */
 define('PENDING_INVOICE', 2);
 
-// IPN messages.
-define ('ERROR_ANSWER_TYPE','Answer Type Error. Signature or kr-hash was not found in answer. Error creating redirect form or embedded form.');
-define ('CANCELLED_STATUS_TYPE','Cancelled status was found');
-define ('ERROR_INVALID_AMOUNT','Invalid Amount');
-define ('ERROR_INVALID_SIGNATURE','An error has occurred in the calculation of the signature');
-define ('PENDING_STATUS','Payment Pending Verification');
-define ('SUCCESSFUL_PAYMENT','Successful Payment');
-define ('ERROR_PAYMENT','Payment Error');
-define ('SUCCESSFUL_ALREADY_PAYMENT', 'Payment Already Made');
 define ('NOT_BANK_PAYMENT', 'Payment is not recorded in bank account');
 
 $res=0;
@@ -52,7 +43,7 @@ if (! $res && file_exists('../../../../main.inc.php')) {
 dol_include_once('/lyra/lib/lyra.lib.php');
 
 // Security check.
-if (empty($conf->lyra->enabled)) {
+if (! isModEnabled('lyra')) {
     accessforbidden('', 1, 1, 1);
 }
 
@@ -72,134 +63,154 @@ require_once DOL_DOCUMENT_ROOT . '/commande/class/commande.class.php';
 require_once DOL_DOCUMENT_ROOT . '/don/class/don.class.php';
 
 dol_include_once('/lyra/core/modules/modLyra.class.php');
-dol_include_once('/lyra/class/LyraResponse.php');
+dol_include_once('lyra/class/sdk-autoload.php');
 require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
 
-global $conf, $notification_type;
+global $conf, $notificationType;
 
 $source = '';
-$lyra_response = null;
+$lyraResponse = null;
 
 // Get response data.
 $data = $_REQUEST;
 
 // Check answer type (REDIRECT/EMBEDDED).
 if (GETPOSTISSET('signature')) {
-    $notification_type = (GETPOSTISSET('vads_hash') ? 'IPN' : 'BACK_BUTTON');
+    $notificationType = (GETPOSTISSET('vads_hash') ? 'IPN' : 'client return');
 
-    $lyra_response = new LyraResponse(
+    $lyraResponse = new \Lyranetwork\Lyra\Sdk\Form\Response(
         $data,
-        $conf->global->LYRA_CTX_MODE,
-        $conf->global->LYRA_KEY_TEST,
-        $conf->global->LYRA_KEY_PROD,
-        modLyra::getDefault('SIGN_ALGO')
+        getDolGlobalString('LYRA_CTX_MODE'),
+        getDolGlobalString('LYRA_KEY_TEST'),
+        getDolGlobalString('LYRA_KEY_PROD'),
+        modLyra::SIGN_ALGO
     );
 
+    lyraSyslog("Start processing {$notificationType} request in redirection mode.");
+
     // Check the authenticity of the request.
-    if (! $lyra_response->isAuthentified()) {
-        lyra_syslog('Invalid signature with data: ' . print_r($data, true), '', LOG_ERR);
-        print_notification_message($data, $source, 'INVALID_SIGNATURE', ERROR_INVALID_SIGNATURE);
+    if (! $lyraResponse->isAuthentified()) {
+        lyraSyslog('Authentication failed: received invalid response with parameters: ' . print_r($data, true), LOG_ERR);
+        printNotificationMessage($data, $source, 'INVALID_SIGNATURE');
     }
 } elseif (GETPOSTISSET('kr-hash')) {
-    $notification_type = ((GETPOST('kr-hash-key') == 'password') ? 'IPN' : 'BACK_BUTTON');
-    $key = ($notification_type === 'IPN') ? getLyraPrivateKey() : getLyraReturnKey();
+    $notificationType = ((GETPOST('kr-hash-key') == 'password') ? 'IPN' : 'client return');
+    $key = ($notificationType === 'IPN') ? getLyraPrivateKey() : getLyraReturnKey();
+
+    lyraSyslog("Start processing {$notificationType} request in embedded payment mode.");
 
     // Check the authenticity of the request.
     if (! modLyra::checkHash($_POST, $key)) {
-        lyra_syslog('Invalid signature with data: ' . print_r($_POST, true), '', LOG_ERR);
-        print_notification_message($data, $source, 'INVALID_SIGNATURE', ERROR_INVALID_SIGNATURE);
+        lyraSyslog('Authentication failed: received invalid response with parameters: ' . print_r($_POST, true), LOG_ERR);
+        printNotificationMessage($data, $source, 'INVALID_SIGNATURE');
     }
 
     $answer = json_decode($data['kr-answer'], true);
     if (is_array($answer)) {
         $data = modLyra::convertRestResult($answer);
-        $lyra_response = new LyraResponse($data, null, null, null);
+        $lyraResponse = new \Lyranetwork\Lyra\Sdk\Form\Response($data, null, null, null);
+
+        if ($notificationType === 'IPN') {
+            if ($lyraResponse->get('order_cycle') !== 'CLOSED') {
+                lyraSyslog('Payment is not accepted but buyer can try to re-order. Do not process payment at this time.', LOG_WARNING);
+                printNotificationMessage($data, $source, 'ERROR', ["Payment is in status {$lyraResponse->getTransStatus()}. Buyer can retry another payment attempt." ]);
+            }
+
+            if (in_array($lyraResponse->getTransStatus(), ['ABANDONED', 'EXPIRED'])) {
+                lyraSyslog('Abandoned or Expired payment IPN ignored.', LOG_WARNING);
+                printNotificationMessage($data, $source, 'ABANDONED');
+            }
+        }
+    } else {
+        lyraSyslog('Invalid data received. Content: ' . print_r($_POST, true), LOG_ERR);
+        printNotificationMessage($data, $source, 'ERROR');
     }
 } else {
-    print_notification_message($data, $source, 'ERROR', ERROR_ANSWER_TYPE);
+    lyraSyslog('Invalid data received. Content: ' . print_r($_POST, true), LOG_ERR);
+    printNotificationMessage($data, $source, 'ERROR');
 }
 
-if ($notification_type !== 'IPN') {
+if ($notificationType !== 'IPN') {
     llxHeaderLyra($langs->trans('LYRA_PAYMENT_FORM'));
 }
 
-$amount = $lyra_response->get('amount');
-$currency = LyraApi::findCurrencyByNumCode($lyra_response->get('currency'));
+$amount = $lyraResponse->get('amount');
+$currency = \Lyranetwork\Lyra\Sdk\Form\Api::findCurrencyByNumCode($lyraResponse->get('currency'));
 
-$order_id = $lyra_response->get('order_id');
-$full_tag = $lyra_response->getExtInfo('full_tag');
-$trans_status = $lyra_response->get('trans_status');
-
-lyra_syslog('----------- NOTIFICATION TYPE = ' . $notification_type . ' -----------', $order_id, LOG_INFO);
+$orderId = $lyraResponse->get('order_id');
+$fullTag = $lyraResponse->getExtInfo('full_tag');
+$transStatus = $lyraResponse->get('trans_status');
 
 // Get payment source (INVOICE, ORDER, FREE, DONATION...)
-$source = getSourceType($full_tag);
-lyra_syslog('source=' . $source . ' || Amount=' . $amount . ' || Order_id=' . $order_id . ' || status=' . $trans_status, $order_id);
+$source = getSourceType($fullTag);
 
-if ($lyra_response->isAcceptedPayment()) {
-    if ($lyra_response->isPendingPayment()) {
+lyraSyslog("Request authenticated for {$source} #{$orderId}, transaction status: {$lyraResponse->get('trans_status')}.");
+lyraSyslog("Payment result for {$source} #{$orderId}: " . ($lyraResponse->get('error_message') ?: $lyraResponse->getLogMessage()));
+
+if ($lyraResponse->isAcceptedPayment()) {
+    lyraSyslog("Payment for {$source} #{$orderId} has been confirmed.");
+
+    if ($lyraResponse->isPendingPayment()) {
         if ($source === 'invoice') {
             $invoice = new Facture($db);
-            $result = $invoice->fetch('', $order_id);
+            $result = $invoice->fetch('', $orderId);
 
             if (! verifyAmount($source, $data)) {
                 exit;
             } else {
-                $alreadyPaid = verifyAlreadyPaid($source, $order_id);
+                $alreadyPaid = verifyAlreadyPaid($source, $orderId);
                 if (! $alreadyPaid) {
-                    setStatusNotePrivate($invoice, $trans_status, $order_id);
+                    setStatusNotePrivate($invoice, $transStatus);
                 } else {
-                    print_notification_message($data, $source, 'SUCCESS', SUCCESSFUL_PAYMENT);
+                    printNotificationMessage($data, $source, 'SUCCESS-BIS');
                 }
             }
         }
 
-        print_notification_message($data, $source, 'PENDING', PENDING_STATUS);
+        printNotificationMessage($data, $source, 'PENDING');
         exit;
     }
 
     $error = 0;
+    $postactionmessages = [];
+    $extPaymentId = ($source === 'free') ? $lyraResponse->get('trans_uuid') : '';
 
-    if ($source === 'free') {
-        $ext_payment_id = $lyra_response->get('trans_uuid');
-    }
-
-    $alreadyPaid = verifyAlreadyPaid($source, $order_id, $ext_payment_id);
-    if (! $alreadyPaid) { // If no record of the payment exists.
-        if ($source === 'invoice' || $source === 'free' ) { // If it is a facture or a free amount.
+    $alreadyPaid = verifyAlreadyPaid($source, $orderId, $extPaymentId);
+    // If no record of the payment exists.
+    if (! $alreadyPaid) {
+        if (in_array($source, ['free', 'invoice'])) {
             // If it is an invoice, consult the invoice by ref (order_id) and check the amount compared with signature amount.
             if ($source === 'invoice') {
                 $invoice = new Facture($db);
-                $result = $invoice->fetch('', $order_id);
+                $result = $invoice->fetch('', $orderId);
                 $id = $invoice->id;
 
                 if (! verifyAmount($source, $data)) {
                     exit;
                 }
 
-               $note_private = $invoice->note_private;
-               $key = '##';
-               $pos = strripos($note_private, $key);
-               if ($pos) {
-                  $note_private = substr($note_private, $pos + 2);
-               }
+                $notePrivate = $invoice->note_private;
+                $key = '##';
+                $pos = strripos($notePrivate, $key);
+                if ($pos) {
+                    $notePrivate = substr($notePrivate, $pos + 2);
+                }
 
-               $sql = 'UPDATE ' . MAIN_DB_PREFIX . 'facture SET ';
-               $sql .= " note_private='" . $note_private . "'";
-               $sql .= ' WHERE rowid = ' . $id;
-               $resql = $db->query($sql);
-               if (! $resql) {
-                  $error++;
-               }
+                $sql = 'UPDATE ' . MAIN_DB_PREFIX . 'facture SET ';
+                $sql .= " note_private='" . $notePrivate . "'";
+                $sql .= ' WHERE rowid = ' . $id;
+                $resql = $db->query($sql);
+                if (! $resql) {
+                    $error++;
+                }
             }
 
             // If invoice is found or is a free amount that doesn't need to find an object.
             if ($result || $source === 'free') {
                 $now = dol_now();
-                $ipaddress = $lyra_response->get('ip_address');
-                $FinalPaymentAmt = round($currency->convertAmountToFloat($amount), $currency->getDecimals());
-                $transaction_uuid = $lyra_response->get('trans_uuid');
-                $mode = $conf->global->LYRA_CTX_MODE;
+                $finalPaymentAmt = round($currency->convertAmountToFloat($amount), $currency->getDecimals());
+                $transactionUuid = $lyraResponse->get('trans_uuid');
+                $mode = getDolGlobalString('LYRA_CTX_MODE');
                 $service = (($mode === 'TEST') ? 'Lyra Test' : 'Lyra Production');
 
                 // Register of new payment on llx_paiement.
@@ -208,13 +219,14 @@ if ($lyra_response->isAcceptedPayment()) {
                 // Creation of payment line.
                 $paiement = new Paiement($db);
                 $paiement->datepaye = $now;
-                $paiement->amounts = array($invoice->id => $FinalPaymentAmt); // All payments dispatching with invoice id.
-                $paiement->multicurrency_amounts = array($invoice->id => $FinalPaymentAmt); // All payments dispatching.
+                $paiement->amounts = array($invoice->id => $finalPaymentAmt); // All payments dispatching with invoice id.
+                $paiement->multicurrency_code = array($invoice->id => $currency->getAlpha3());
+                $paiement->multicurrency_amounts = array($invoice->id => $finalPaymentAmt); // All payments dispatching.
                 $paymentTypeId = 0;
 
-                $paymentTypeId = $conf->global->LYRA_PAYMENT_MODE_FOR_PAYMENTS;
+                $paymentTypeId = getDolGlobalInt('LYRA_PAYMENT_MODE_FOR_PAYMENTS');
                 if (empty($paymentTypeId)) {
-                    $paymentType = $_SESSION['paymentType'];
+                    $paymentType = GETPOSTINT('paiementid') ?? null;
                     if (empty($paymentType)) {
                         $paymentType = 'VAD';
                     }
@@ -223,120 +235,116 @@ if ($lyra_response->isAcceptedPayment()) {
                 }
 
                 $paiement->paiementid = $paymentTypeId;
-                $paiement->note_public = 'Online payment ' . dol_print_date($now, 'standard') . ' from ' . $ipaddress;
-                $paiement->ext_payment_id = $transaction_uuid;
+                $paiement->note = getResponseMessage($lyraResponse);
+                $paiement->ext_payment_id = $transactionUuid;
                 $paiement->ext_payment_site = $service;
-                $paiement->num_payment = $order_id;
+                $paiement->num_payment = $orderId;
+
+                $total = 0;
 
                 if (! $error) {
                     if ($source === 'free') { // Only create record on llx_paiement for free amount payment.
                         $db->begin();
 
-                        $refPayment = $paiement->getNextNumRef(is_object($thirdparty) ? $thirdparty : '');
-                        $total = $FinalPaymentAmt;
-                        $mtotal = $FinalPaymentAmt;
-                        $num_payment = $paiement->num_payment;
-                        $note = $paiement->note_public;
+                        $refPayment = $paiement->getNextNumRef(is_object($thirdParty) ? $thirdParty : '');
+                        $total = $finalPaymentAmt;
+                        $mtotal = $finalPaymentAmt;
+                        $numPayment = $paiement->num_payment;
+                        $note = $paiement->note;
 
                         $sql = 'INSERT INTO ' . MAIN_DB_PREFIX . 'paiement (entity, ref, datec, datep, amount, multicurrency_amount, fk_paiement, num_paiement, note, ext_payment_id, ext_payment_site, fk_user_creat)';
-                        $sql.= ' VALUES (' . $conf->entity . ", '" . $db->escape($refPayment) . "', '" . $db->idate($now) . "', '" . $db->idate($paiement->datepaye ) . "', " . $total . ", " . $mtotal . ", " . $paiement->paiementid . ", '" . $db->escape($num_payment) . "', '" . $db->escape($note) . "', '" . $paiement->ext_payment_id . "', '" . $paiement->ext_payment_site . "', " . $user->id . ')';
+                        $sql.= ' VALUES (' . $conf->entity . ", '" . $db->escape($refPayment) . "', '" . $db->idate($now) . "', '" . $db->idate($paiement->datepaye ) . "', " . $total . ", " . $mtotal . ", " . $paiement->paiementid . ", '" . $db->escape($numPayment) . "', '" . $db->escape($note) . "', '" . $paiement->ext_payment_id . "', '" . $paiement->ext_payment_site . "', " . $user->id . ')';
 
                         $resql = $db->query($sql);
                         if ($resql) {
                             $paiement_id = $db->last_insert_id(MAIN_DB_PREFIX . 'paiement');
-                            lyra_syslog("Record Payment Created", $order_id);
                         }
                     } else {
                         $paiement_id = $paiement->create($user, 1); // This include closing invoices and regenerating documents.
                     }
 
                     if ($paiement_id < 0) {
-                        lyra_syslog($paiement->error . ' ' . join("<br>\n", $paiement->errors), $order_id, LOG_ERR);
+                        lyraSyslog($paiement->error . join("<br>\n", $paiement->errors), LOG_ERR);
                         $error++;
-                    } else {
-                        lyra_syslog("Record Payment Created", $order_id);
                     }
                 }
 
-                if (! $error && ! empty($conf->banque->enabled) && ! empty($conf->global->LYRA_DOLIBARR_BANK_ACCOUNT)) {
-                    $bankaccountid = $conf->global->LYRA_DOLIBARR_BANK_ACCOUNT;
-                    if ($bankaccountid > 0) {
-                        $label='(CustomerInvoicePayment)';
+                if (! $error && isModEnabled('bank') && getDolGlobalString('LYRA_DOLIBARR_BANK_ACCOUNT')) {
+                    $bankAccountId = getDolGlobalString('LYRA_DOLIBARR_BANK_ACCOUNT');
+                    if ($bankAccountId > 0) {
+                        $label = '(CustomerInvoicePayment)';
                         if ($invoice->type == Facture::TYPE_CREDIT_NOTE) {
                             // Refund of a credit note.
-                            $label='(CustomerInvoicePaymentBack)';
+                            $label = '(CustomerInvoicePaymentBack)';
                         }
 
                         if ($source === 'free') {
-                           $label='(FreePayment)';
+                           $label = '(FreePayment)';
                         }
 
-                        $paiement->amount = $total;
                         $paiement->id = $paiement_id;
-                        $result=$paiement->addPaymentToBank($user, 'payment', $label, $bankaccountid, '', '');
+                        $result = $paiement->addPaymentToBank($user, 'payment', $label, $bankAccountId, '', '');
 
                         if ($result < 0) {
-                            lyra_syslog($paiement->error . ' ' . join("<br>\n", $paiement->errors), $order_id, LOG_ERR);
+                            lyraSyslog($paiement->error . join("<br>\n", $paiement->errors), LOG_ERR);
                             $error++;
                         }
                     } else {
                         $postactionmessages[] = NOT_BANK_PAYMENT;
-                        lyra_syslog(NOT_BANK_PAYMENT, $order_id, LOG_WARNING);
                     }
                 }
 
                 if (! $error) {
                     $db->query("COMMIT");
-                    lyra_syslog('COMMIT', $order_id);
                 } else {
                     $db->rollback();
-                    lyra_syslog('ROLLBACK', $order_id, LOG_ERR);
                 }
             }
         }
 
         if (! $error) {
-            print_notification_message($data, $source, 'SUCCESS', SUCCESSFUL_PAYMENT, $postactionmessages);
+            printNotificationMessage($data, $source, 'SUCCESS', $postactionmessages);
             exit;
         } else {
-            print_notification_message($data, $source, 'ERROR', ERROR_PAYMENT, $postactionmessages);
+            printNotificationMessage($data, $source, 'ERROR', $postactionmessages);
             exit;
         }
     } else {
-        print_notification_message($data, $source, 'SUCCESS', SUCCESSFUL_PAYMENT, $postactionmessages);
+        lyraSyslog("Payment for {$source} #{$orderId} already saved.");
+        printNotificationMessage($data, $source, 'SUCCESS-BIS', $postactionmessages);
         exit;
     }
-} elseif ($lyra_response->isCancelledPayment()) {
-    print_notification_message($data, $source, 'ERROR', CANCELLED_STATUS_TYPE . ' (' . $trans_status . ')');
+} elseif ($lyraResponse->isCancelledPayment()) {
+    lyraSyslog("Payment for {$source} #{$orderId} has been cancelled.");
+    printNotificationMessage($data, $source, 'PAYMENT_ERROR');
 } else {
-    print_notification_message($data, $source, 'ERROR', ERROR_PAYMENT . ' (' . $trans_status . ')');
+    lyraSyslog("Payment for {$source} #{$orderId} has failed.");
+    printNotificationMessage($data, $source, 'PAYMENT_ERROR');
 }
 
 /**
  * Obtain source type (free, invoice, order, donation, contractline, membersubscription).
  *
- * @param  string   $order_info  Information from answer
+ * @param  string   $orderInfo  Information from answer
  * @return string   $source       (free, invoice, order, donation, contractline, membersubscription)
  */
-function getSourceType ($order_info)
+function getSourceType ($orderInfo)
 {
     $source = '';
-    if (preg_match('#^TAG(.*)$#', $order_info)) {
+    if (preg_match('#^TAG(.*)$#', $orderInfo)) {
         $source = 'free'; // Free amount.
-    } elseif (preg_match('#^INV(.*)$#', $order_info)) {
+    } elseif (preg_match('#^INV(.*)$#', $orderInfo)) {
         $source = 'invoice'; // Invoice.
-    } elseif (preg_match('#^ORD(.*)$#', $order_info)) {
+    } elseif (preg_match('#^ORD(.*)$#', $orderInfo)) {
         $source = 'order';
-    } elseif (preg_match('#^ORD(.*)$#', $order_info)) {
+    } elseif (preg_match('#^ORD(.*)$#', $orderInfo)) {
         $source = 'order'; // Order.
-    } elseif (preg_match('#^DON(.*)$#', $order_info)) {
+    } elseif (preg_match('#^DON(.*)$#', $orderInfo)) {
         $source = 'donation'; // Donation.
-    } elseif (preg_match('#^COL(.*)$#', $order_info)) {
+    } elseif (preg_match('#^COL(.*)$#', $orderInfo)) {
         $source = 'contractline'; // Contract ligne.
-    } elseif (preg_match('#^MEM(.*)$#', $order_info)) {
+    } elseif (preg_match('#^MEM(.*)$#', $orderInfo)) {
         $source = 'membersubscription'; // Member subscription.
-    } else {
-        $source = '';
     }
 
     return $source;
@@ -345,15 +353,17 @@ function getSourceType ($order_info)
 /**
  * Print result of payment according to status answer.
  */
-function print_result_payment($data, $source, $resultType, $additionalMessages = array())
+function printPaymentResult($data, $source, $resultType, $additionalMessages = array())
 {
-    global $conf, $mysoc, $langs, $notification_type;
+    global $conf, $mysoc, $langs, $notificationType;
 
     $suffix = '';
     $title = '';
-    $print_button = true;
+    $printButton = true;
+    $message = '';
+    $messageDesc = '';
 
-    if ($notification_type !== 'IPN') {
+    if ($notificationType !== 'IPN') {
         // Show message.
         print '<span id="dolpaymentspan"></span>' . "\n";
         print '<div id="dolpaymentdiv" align="center">' . "\n";
@@ -363,13 +373,13 @@ function print_result_payment($data, $source, $resultType, $additionalMessages =
 
         // Define logo and logosmall.
         $logosmall = $mysoc->logo_small;
-        $logo=$mysoc->logo;
+        $logo = $mysoc->logo;
         $paramlogo = 'ONLINE_PAYMENT_LOGO_' . $suffix;
 
-        if (! empty($conf->global->$paramlogo)) {
-            $logosmall = $conf->global->$paramlogo;
-        } elseif (! empty($conf->global->ONLINE_PAYMENT_LOGO)) {
-            $logosmall = $conf->global->ONLINE_PAYMENT_LOGO;
+        if (getDolGlobalString($paramlogo)) {
+            $logosmall = getDolGlobalString($paramlogo);
+        } elseif (getDolGlobalString('ONLINE_PAYMENT_LOGO')) {
+            $logosmall = getDolGlobalString('ONLINE_PAYMENT_LOGO');
         }
 
         // Define urlLogo.
@@ -399,12 +409,14 @@ function print_result_payment($data, $source, $resultType, $additionalMessages =
 
     require_once DOL_DOCUMENT_ROOT . '/core/lib/payments.lib.php';
 
-    $amount = $data['vads_amount'];
-    $order_id = $data['vads_order_id'];
-    $status = $data['vads_trans_status'];
+    $amount = $data['vads_amount'] ?? null;
+    $orderId = $data['vads_order_id'] ?? null;
+    $status = $data['vads_trans_status'] ?? null;
+    $url = '';
+    $messageClic = '';
 
-    if ($resultType === 'ERROR') {
-        $url = getOnlinePaymentUrl(0, $source, $order_id, $amount, $order_id);
+    if (in_array($resultType, ['PAYMENT_ERROR', 'ERROR'])) {
+        $url = getOnlinePaymentUrl(0, $source, $orderId, $amount, $orderId);
         if ($status == 'REFUSED') {
             $message = $langs->trans("LYRA_REFUSED_PAYMENT_TEXT");
             $messageDesc = $langs->trans("LYRA_REFUSED_PAYMENT_MSG");
@@ -419,35 +431,35 @@ function print_result_payment($data, $source, $resultType, $additionalMessages =
         }
 
         $messageClic = $langs->trans("LYRA_TRY_AGAIN");
-    } elseif ($resultType === 'SUCCESS') {
-        if ($source === 'free' && $resultType === 'SUCCESS') {
-            $print_button = false;
+    } elseif (in_array($resultType, ['SUCCESS', 'SUCCESS-BIS'])) {
+        if ($source === 'free') {
+            $printButton = false;
         }
 
-        $url = getOnlinePaymentUrl(0, $source, $order_id);
+        $url = getOnlinePaymentUrl(0, $source, $orderId);
         $message = $langs->trans("LYRA_THANK_FOR_PAYMENT_TEXT");
         $messageDesc = $langs->trans("LYRA_SUCCESS_PAYMENT_TEXT");
         $messageClic = $langs->trans("LYRA_DETAILS");
     } elseif ($resultType === 'PENDING') {
-        $url = getOnlinePaymentUrl(0, $source, $order_id);
-        $message = $langs->trans("LYRA_PENDING_PAYMENT");
-        $messageDesc = $langs->trans("LYRA_PENDING_PAYMENT_DESC");
+        $url = getOnlinePaymentUrl(0, $source, $orderId);
+        $message = $langs->trans("LYRA_PENDING_PAYMENT_TEXT");
+        $messageDesc = $langs->trans("LYRA_PENDING_PAYMENT_MSG");
         $messageClic = $langs->trans("LYRA_DETAILS");
         if ($source === 'free') {
-            $print_button = false;
+            $printButton = false;
         }
     } elseif ($resultType === 'INVALID_SIGNATURE') {
         $message = $langs->trans("LYRA_INVALID_SIGNATURE");
         $messageDesc = $langs->trans("LYRA_INVALID_SIGNATURE_DESC");
-        $print_button = false;
+        $printButton = false;
     } elseif ($resultType === 'INVALID_AMOUNT') {
          $message = $langs->trans("LYRA_INVALID_AMOUNT");
          $messageDesc = $langs->trans("LYRA_INVALID_AMOUNT_DESC");
-         $print_button = false;
+         $printButton = false;
     }
 
     // Output payment summary form.
-    if ($notification_type !== 'IPN') {
+    if ($notificationType !== 'IPN') {
         print '<center>' . "\n";
         print '<table id="dolpaymenttable" summary="Payment form">' . "\n";
         print '<tr><td align="center">';
@@ -463,14 +475,14 @@ function print_result_payment($data, $source, $resultType, $additionalMessages =
         }
 
         print '<tr><td><br></td></tr>';
-        print_summary_payment_details($data, $source);
+        printSummaryPaymentDetails($data, $source);
         print '<tr><td><br></td></tr>';
 
         print '<tr>';
         print '<td align="left" colspan="2">' . $messageDesc . '</td>';
         print '</tr>' . "\n";
 
-        if ($resultType === 'SUCCESS') {
+        if (in_array($resultType, ['SUCCESS', 'SUCCESS-BIS'])) {
             if ($source == 'order') {
                 print '<br><br><span class="amountpaymentcomplete">' . $langs->trans("OrderBilled") . '</span>';
             } elseif ($source == 'invoice') {
@@ -485,7 +497,7 @@ function print_result_payment($data, $source, $resultType, $additionalMessages =
         }
 
         // If the payment is not successful show redirect button with calculated url.
-        if ($print_button) {
+        if ($printButton) {
             print '<tr>';
             print '<td align="center" colspan="2" ><br><br><div  class="button buttonpayment"><a style="color: white;" href="' . $url . '">' . $messageClic . '</a></div></td>';
             print '</tr>';
@@ -508,17 +520,17 @@ function print_result_payment($data, $source, $resultType, $additionalMessages =
 /**
  * Print summary data of the payment object source (free, invoice...).
  */
-function print_summary_payment_details($data, $source)
+function printSummaryPaymentDetails($data, $source)
 {
     global $langs, $mysoc, $conf, $db;
 
     $var = false;
     $creditor = $mysoc->name;
-    $currency = LyraApi::findCurrencyByAlphaCode($conf->currency);
-    $amount = round($currency->convertAmountToFloat($data['vads_amount']), $currency->getDecimals());
-    $order_id = $data['vads_order_id'];
-    $fulltag = $data['vads_ext_info_full_tag'];
-    $cust_name = $data['vads_cust_first_name'];
+    $currency = \Lyranetwork\Lyra\Sdk\Form\Api::findCurrencyByAlphaCode($conf->currency);
+    $amount = isset($data['vads_amount']) ? round($currency->convertAmountToFloat($data['vads_amount']), $currency->getDecimals()) : null;
+    $orderId = $data['vads_order_id'] ?? null;
+    $fullTag = $data['vads_ext_info_full_tag'] ?? null;
+    $custName = isset($data['vads_cust_first_name']) ?? '';
 
     if ($source == 'free') {
         // Creditor.
@@ -540,24 +552,23 @@ function print_summary_payment_details($data, $source)
         }
 
         // Currency.
-        print ' <b>' . $langs->trans("Currency" . $currency->getAlpha3()) . '</b>';
+        print ' <b>' . $langs->trans("Currency" . $conf->currency) . '</b>';
         print '</td></tr>' . "\n";
 
         // Tag.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_PAYMENT_CODE");
-        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fulltag . '</b>';
+        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fullTag . '</b>';
         print '</td></tr>' . "\n";
     }
 
     // Payment on customer order.
     if ($source == 'order') {
-        $found = true;
         $langs->load("orders");
 
         require_once DOL_DOCUMENT_ROOT . '/commande/class/commande.class.php';
 
         $order = new Commande($db);
-        $result = $order->fetch('', $order_id);
+        $result = $order->fetch('', $orderId);
         if ($result <= 0) {
             $mesg = $order->error;
             $error++;
@@ -565,8 +576,7 @@ function print_summary_payment_details($data, $source)
             $result = $order->fetch_thirdparty($order->socid);
         }
 
-        $object = $order;
-        $fulltag = dol_string_unaccent($fulltag);
+        $fullTag = dol_string_unaccent($fullTag);
 
         // Creditor.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_CREDITOR");
@@ -603,24 +613,23 @@ function print_summary_payment_details($data, $source)
         }
 
         // Currency.
-        print ' <b>' . $langs->trans("Currency" . $currency) . '</b>';
+        print ' <b>' . $langs->trans("Currency" . $conf->currency) . '</b>';
         print '</td></tr>' . "\n";
 
         // Tag.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_PAYMENT_CODE");
-        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fulltag . '</b>';
+        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fullTag . '</b>';
         print '</td></tr>' . "\n";
     }
 
     // Payment of customer invoice.
     if ($source == 'invoice') {
-        $found = true;
         $langs->load("bills");
 
         require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture.class.php';
 
         $invoice = new Facture($db);
-        $result = $invoice->fetch('', $order_id);
+        $result = $invoice->fetch('', $orderId);
         if ($result <= 0) {
             $mesg = $invoice->error;
             $error++;
@@ -629,7 +638,7 @@ function print_summary_payment_details($data, $source)
         }
 
         $object = $invoice;
-        $fulltag = dol_string_unaccent($fulltag);
+        $fullTag = dol_string_unaccent($fullTag);
 
         // Creditor.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_CREDITOR");
@@ -669,25 +678,24 @@ function print_summary_payment_details($data, $source)
         }
 
         // Currency.
-        print ' <b>' . $langs->trans("Currency" . $currency->getAlpha3()) . '</b>';
+        print ' <b>' . $langs->trans("Currency" . $conf->currency) . '</b>';
         print '</td></tr>' . "\n";
 
         // Tag.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_PAYMENT_CODE");
-        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fulltag . '</b>';
+        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fullTag . '</b>';
         print '</td></tr>' . "\n";
     }
 
     // Payment on contract line.
     if ($source == 'contractline') {
-        $found = true;
         $langs->load("contracts");
 
         require_once DOL_DOCUMENT_ROOT . '/contrat/class/contrat.class.php';
 
         $contract = new Contrat($db);
         $contractline = new ContratLigne($db);
-        $result = $contractline->fetch('', $order_id);
+        $result = $contractline->fetch('', $orderId);
 
         if ($result <= 0) {
             $mesg = $contractline->error;
@@ -710,12 +718,11 @@ function print_summary_payment_details($data, $source)
         $object = $contractline;
         if ($action != 'dopayment') { // Do not change amount if we just click on first dopayment.
             $amount = $contractline->total_ttc;
-            if ($contractline->fk_product && ! empty($conf->global->PAYMENT_USE_NEW_PRICE_FOR_CONTRACTLINES)) {
+            if ($contractline->fk_product && getDolGlobalString('PAYMENT_USE_NEW_PRICE_FOR_CONTRACTLINES')) {
                 $product = new Product($db);
                 $result = $product->fetch($contractline->fk_product);
 
-                // We define price for product (TODO Put this in a method in product class).
-                if (! empty($conf->global->PRODUIT_MULTIPRICES)) {
+                if (getDolGlobalString('PRODUIT_MULTIPRICES')) {
                     $pu_ht = $product->multiprices[$contract->thirdparty->price_level];
                     $pu_ttc = $product->multiprices_ttc[$contract->thirdparty->price_level];
                     $price_base_type = $product->multiprices_base_type[$contract->thirdparty->price_level];
@@ -740,16 +747,15 @@ function print_summary_payment_details($data, $source)
         }
 
         if (GETPOST('fulltag', 'alpha')) {
-           $fulltag = GETPOST('fulltag', 'alpha');
+           $fullTag = GETPOST('fulltag', 'alpha');
         } else {
-            $fulltag = 'COL=' . $contractline->id . '.CON=' . $contract->id . '.CUS=' . $contract->thirdparty->id . '.DAT=' . dol_print_date(dol_now(), '%Y%m%d%H%M%S');
+            $fullTag = 'COL=' . $contractline->id . '.CON=' . $contract->id . '.CUS=' . $contract->thirdparty->id . '.DAT=' . dol_print_date(dol_now(), '%Y%m%d%H%M%S');
             if (! empty($TAG)) {
-                $tag = $TAG;
-                $fulltag .= '.TAG=' . $TAG;
+                $fullTag .= '.TAG=' . $TAG;
             }
         }
 
-        $fulltag = dol_string_unaccent($fulltag);
+        $fullTag = dol_string_unaccent($fullTag);
 
         $qty = 1;
         if (GETPOST('qty')) {
@@ -763,11 +769,11 @@ function print_summary_payment_details($data, $source)
 
         // Debitor.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_THIRD_PARTY");
-        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b>' . $cust_name . '</b>';
+        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b>' . $custName . '</b>';
         print '</td></tr>' . "\n";
 
         // Object.
-        $text = '<b>' . $langs->trans("PaymentRenewContractId", $order_id, $contractline->ref) . '</b>';
+        $text = '<b>' . $langs->trans("PaymentRenewContractId", $orderId, $contractline->ref) . '</b>';
         if ($contractline->fk_product) {
             $contractline->fetch_product();
             $text .= '<br>' . $contractline->product->ref . ($contractline->product->label ? ' - ' . $contractline->product->label : '');
@@ -804,18 +810,16 @@ function print_summary_payment_details($data, $source)
         $label = $langs->trans("Quantity");
         $qty = 1;
         $duration = '';
-        if ($contractline->fk_product) {
-            if ($contractline->product->isService() && $contractline->product->duration_value > 0) {
-                $label = $langs->trans("Duration");
+        if ($contractline->fk_product && $contractline->product->isService() && ($contractline->product->duration_value > 0)) {
+            $label = $langs->trans("Duration");
 
-                if ($contractline->product->duration_value > 1) {
-                    $dur = array("h"=>$langs->trans("Hours"), "d"=>$langs->trans("DurationDays"), "w"=>$langs->trans("DurationWeeks"), "m"=>$langs->trans("DurationMonths"), "y"=>$langs->trans("DurationYears"));
-                } else {
-                    $dur = array("h"=>$langs->trans("Hour"), "d"=>$langs->trans("DurationDay"), "w"=>$langs->trans("DurationWeek"), "m"=>$langs->trans("DurationMonth"), "y"=>$langs->trans("DurationYear"));
-                }
-
-                $duration = $contractline->product->duration_value . ' ' . $dur[$contractline->product->duration_unit];
+            if ($contractline->product->duration_value > 1) {
+                $dur = array("h"=>$langs->trans("Hours"), "d"=>$langs->trans("DurationDays"), "w"=>$langs->trans("DurationWeeks"), "m"=>$langs->trans("DurationMonths"), "y"=>$langs->trans("DurationYears"));
+            } else {
+                $dur = array("h"=>$langs->trans("Hour"), "d"=>$langs->trans("DurationDay"), "w"=>$langs->trans("DurationWeek"), "m"=>$langs->trans("DurationMonth"), "y"=>$langs->trans("DurationYear"));
             }
+
+            $duration = $contractline->product->duration_value . ' ' . $dur[$contractline->product->duration_unit];
         }
 
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $label . '</td>';
@@ -840,26 +844,25 @@ function print_summary_payment_details($data, $source)
         }
 
         // Currency.
-        print ' <b>' . $langs->trans("Currency" . $currency) . '</b>';
-        print '<input type="hidden" name="currency" value="' . $currency . '">';
+        print ' <b>' . $langs->trans("Currency" . $conf->currency) . '</b>';
+        print '<input type="hidden" name="currency" value="' . $currency->getAlpha3() . '">';
         print '</td></tr>' . "\n";
 
         // Tag.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_PAYMENT_CODE");
-        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fulltag . '</b>';
+        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fullTag . '</b>';
         print '</td></tr>' . "\n";
     }
 
     // Payment on member subscription.
     if ($source == 'membersubscription') {
-        $found = true;
         $langs->load("members");
 
         require_once DOL_DOCUMENT_ROOT . '/adherents/class/adherent.class.php';
         require_once DOL_DOCUMENT_ROOT . '/adherents/class/subscription.class.php';
 
         $member = new Adherent($db);
-        $result = $member->fetch('', $order_id);
+        $result = $member->fetch('', $orderId);
         if ($result <= 0) {
             $mesg = $member->error;
             $error++;
@@ -869,7 +872,7 @@ function print_summary_payment_details($data, $source)
         }
 
         $object = $member;
-        $fulltag = dol_string_unaccent($fulltag);
+        $fullTag = dol_string_unaccent($fullTag);
 
         // Creditor.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_CREDITOR");
@@ -923,15 +926,15 @@ function print_summary_payment_details($data, $source)
         // Amount.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_AMOUNT");
         if (empty($amount)) {
-            if (empty($conf->global->MEMBER_NEWFORM_AMOUNT)) {
+            if (empty(getDolGlobalString('MEMBER_NEWFORM_AMOUNT'))) {
                 print ' (' . $langs->trans("LYRA_TO_COMPLETE");
             }
 
-            if (! empty($conf->global->MEMBER_EXT_URL_SUBSCRIPTION_INFO)) {
-                print ' - <a href="' . $conf->global->MEMBER_EXT_URL_SUBSCRIPTION_INFO . '" rel="external" target="_blank">' . $langs->trans("SeeHere") . '</a>';
+            if (getDolGlobalString('MEMBER_EXT_URL_SUBSCRIPTION_INFO')) {
+                print ' - <a href="' . getDolGlobalString('MEMBER_EXT_URL_SUBSCRIPTION_INFO') . '" rel="external" target="_blank">' . $langs->trans("SeeHere") . '</a>';
             }
 
-            if (empty($conf->global->MEMBER_NEWFORM_AMOUNT)) {
+            if (empty(getDolGlobalString('MEMBER_NEWFORM_AMOUNT'))) {
                 print ')';
             }
         }
@@ -940,30 +943,28 @@ function print_summary_payment_details($data, $source)
         $valtoshow = '';
         if (empty($amount) || ! is_numeric($amount)) {
             $valtoshow = price2num(GETPOST("newamount", 'alpha'), 'MT');
+
             // Force default subscription amount to value defined into constant...
             if (empty($valtoshow)) {
-                if (! empty($conf->global->MEMBER_NEWFORM_EDITAMOUNT)) {
-                    if (! empty($conf->global->MEMBER_NEWFORM_AMOUNT)) {
-                        $valtoshow = $conf->global->MEMBER_NEWFORM_AMOUNT;
-                    }
-                } else {
-                    if (! empty($conf->global->MEMBER_NEWFORM_AMOUNT)) {
-                        $amount = $conf->global->MEMBER_NEWFORM_AMOUNT;
-                    }
+                if (getDolGlobalString('MEMBER_NEWFORM_EDITAMOUNT')
+                    && getDolGlobalString('MEMBER_NEWFORM_AMOUNT')) {
+                    $valtoshow = getDolGlobalString('MEMBER_NEWFORM_AMOUNT');
+                } elseif (getDolGlobalString('MEMBER_NEWFORM_AMOUNT')) {
+                    $amount = getDolGlobalString('MEMBER_NEWFORM_AMOUNT');
                 }
             }
         }
 
         if (empty($amount) || ! is_numeric($amount)) {
-            if (! empty($conf->global->MEMBER_MIN_AMOUNT) && $valtoshow) {
-                $valtoshow = max($conf->global->MEMBER_MIN_AMOUNT, $valtoshow);
+            if (getDolGlobalString('MEMBER_MIN_AMOUNT') && $valtoshow) {
+                $valtoshow = max(getDolGlobalString('MEMBER_MIN_AMOUNT'), $valtoshow);
             }
 
             print '<input class="flat maxwidth75" type="text" name="newamount" value="' . $valtoshow . '">';
         } else {
             $valtoshow = $amount;
-            if (! empty($conf->global->MEMBER_MIN_AMOUNT) && $valtoshow) {
-                $valtoshow = max($conf->global->MEMBER_MIN_AMOUNT, $valtoshow);
+            if (getDolGlobalString('MEMBER_MIN_AMOUNT') && $valtoshow) {
+                $valtoshow = max(getDolGlobalString('MEMBER_MIN_AMOUNT'), $valtoshow);
             }
 
             print '<b>' . price($valtoshow) . '</b>';
@@ -975,13 +976,12 @@ function print_summary_payment_details($data, $source)
 
         // Tag.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_PAYMENT_CODE");
-        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fulltag . '</b>';
+        print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fullTag . '</b>';
         print '</td></tr>' . "\n";
     }
 
     // Payment on donation.
     if ($source == 'donation') {
-        $found = true;
         $langs->load("don");
 
         require_once DOL_DOCUMENT_ROOT . '/don/class/don.class.php';
@@ -995,8 +995,7 @@ function print_summary_payment_details($data, $source)
             $don->fetch_thirdparty();
         }
 
-        $object = $don;
-        $fulltag = dol_string_unaccent($fulltag);
+        $fullTag = dol_string_unaccent($fullTag);
 
         // Creditor.
         print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_CREDITOR");
@@ -1028,15 +1027,15 @@ function print_summary_payment_details($data, $source)
          // Amount.
          print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_AMOUNT");
          if (empty($amount)) {
-             if (empty($conf->global->MEMBER_NEWFORM_AMOUNT)) {
+             if (empty(getDolGlobalString('MEMBER_NEWFORM_AMOUNT'))) {
                  print ' (' . $langs->trans("LYRA_TO_COMPLETE");
              }
 
-             if (! empty($conf->global->MEMBER_EXT_URL_SUBSCRIPTION_INFO)) {
-                 print ' - <a href="' . $conf->global->MEMBER_EXT_URL_SUBSCRIPTION_INFO . '" rel="external" target="_blank">' . $langs->trans("SeeHere") . '</a>';
+             if (getDolGlobalString('MEMBER_EXT_URL_SUBSCRIPTION_INFO')) {
+                 print ' - <a href="' . getDolGlobalString('MEMBER_EXT_URL_SUBSCRIPTION_INFO') . '" rel="external" target="_blank">' . $langs->trans("SeeHere") . '</a>';
              }
 
-             if (empty($conf->global->MEMBER_NEWFORM_AMOUNT)) {
+             if (empty(getDolGlobalString('MEMBER_NEWFORM_AMOUNT'))) {
                  print ')';
             }
         }
@@ -1047,28 +1046,25 @@ function print_summary_payment_details($data, $source)
             $valtoshow = price2num(GETPOST("newamount", 'alpha'), 'MT');
             // Force default subscription amount to value defined into constant...
             if (empty($valtoshow)) {
-                if (! empty($conf->global->MEMBER_NEWFORM_EDITAMOUNT)) {
-                    if (! empty($conf->global->MEMBER_NEWFORM_AMOUNT)) {
-                        $valtoshow = $conf->global->MEMBER_NEWFORM_AMOUNT;
-                    }
-                } else {
-                    if (! empty($conf->global->MEMBER_NEWFORM_AMOUNT)) {
-                        $amount = $conf->global->MEMBER_NEWFORM_AMOUNT;
-                    }
+                if (getDolGlobalString('MEMBER_NEWFORM_EDITAMOUNT')
+                    && getDolGlobalString('MEMBER_NEWFORM_AMOUNT')) {
+                    $valtoshow = getDolGlobalString('MEMBER_NEWFORM_AMOUNT');
+                } elseif (getDolGlobalString('MEMBER_NEWFORM_AMOUNT')) {
+                   $amount = getDolGlobalString('MEMBER_NEWFORM_AMOUNT');
                 }
             }
         }
 
         if (empty($amount) || ! is_numeric($amount)) {
-            if (! empty($conf->global->MEMBER_MIN_AMOUNT) && $valtoshow) {
-                $valtoshow = max($conf->global->MEMBER_MIN_AMOUNT, $valtoshow);
+            if (getDolGlobalString('MEMBER_MIN_AMOUNT') && $valtoshow) {
+                $valtoshow = max(getDolGlobalString('MEMBER_MIN_AMOUNT'), $valtoshow);
             }
 
             print '<input class="flat maxwidth75" type="text" name="newamount" value="' . $valtoshow . '">';
         } else {
             $valtoshow = $amount;
-            if (! empty($conf->global->MEMBER_MIN_AMOUNT) && $valtoshow) {
-                $valtoshow = max($conf->global->MEMBER_MIN_AMOUNT, $valtoshow);
+            if (getDolGlobalString('MEMBER_MIN_AMOUNT') && $valtoshow) {
+                $valtoshow = max(getDolGlobalString('MEMBER_MIN_AMOUNT'), $valtoshow);
             }
 
             print '<b>' . price($valtoshow) . '</b>';
@@ -1080,7 +1076,7 @@ function print_summary_payment_details($data, $source)
 
          // Tag.
          print '<tr class="CTableRow' . ($var ? '1' : '2') . '"><td class="CTableRow' . ($var ? '1' : '2') . '">' . $langs->trans("LYRA_PAYMENT_CODE");
-         print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fulltag . '</b>';
+         print '</td><td class="CTableRow' . ($var ? '1' : '2') . '"><b style="word-break: break-all;">' . $fullTag . '</b>';
          print '</td></tr>' . "\n";
     }
 }
@@ -1088,38 +1084,53 @@ function print_summary_payment_details($data, $source)
 /**
  * Verify if source is already paid.
  */
-function verifyAlreadyPaid($source, $ref, $ext_payment_id = '')
+function verifyAlreadyPaid($source, $ref, $extPaymentId = '')
 {
-    global $conf, $db, $langs;
+    global $db, $langs;
 
-    if ($source == 'invoice') {
-        $object = new Facture($db);
-    } elseif ($source == 'order') {
-        $object = new Commande($db);
-    } elseif ($source == 'donation') {
-        $object = new Don($db);
-    } elseif ($source == 'membersubscription') {
-        $object = null;
-    } elseif ($source == 'contractline') {
-         $object = new ContratLigne($db);
-    } elseif ($source == 'free') {
-        $object = new Paiement($db);
-        $sql = 'SELECT p.rowid, p.ref, p.ext_payment_id, p.ext_payment_site, p.fk_bank,';
-        $sql.= ' p.num_paiement as num_payment, p.note';
-        $sql.= ' FROM ' . MAIN_DB_PREFIX . 'paiement as p LEFT JOIN ' . MAIN_DB_PREFIX . 'c_paiement as c ON p.fk_paiement = c.id';
-        $sql.= ' WHERE p.entity IN (' . getEntity('invoice') . ')';
-        if ($ref) {
-            $sql.= " and p.num_paiement = '" . $ref . "'";
-        }
+    switch ($source) {
+        case 'invoice':
+            $object = new Facture($db);
+            break;
 
-        if ($ext_payment_id) {
-            $sql.= " and p.ext_payment_id  = '" . $ext_payment_id . "'";
-        }
+        case 'order':
+            $object = new Commande($db);
+            break;
 
-        $num_rows = $db->query($sql)->num_rows;
-        if ($num_rows > 0) {
-            return true;
-        }
+        case 'donation':
+            $object = new Don($db);
+            break;
+
+        case 'contractline':
+            $object = new ContratLigne($db);
+            break;
+
+        case 'membersubscription':
+            $object = null;
+            break;
+
+        case 'free':
+            $object = new Paiement($db);
+            $sql = 'SELECT p.rowid, p.ref, p.ext_payment_id, p.ext_payment_site, p.fk_bank,';
+            $sql.= ' p.num_paiement as num_payment, p.note';
+            $sql.= ' FROM ' . MAIN_DB_PREFIX . 'paiement as p LEFT JOIN ' . MAIN_DB_PREFIX . 'c_paiement as c ON p.fk_paiement = c.id';
+            $sql.= ' WHERE p.entity IN (' . getEntity('invoice') . ')';
+            if ($ref) {
+                $sql.= " and p.num_paiement = '" . $ref . "'";
+            }
+
+            if ($extPaymentId) {
+                $sql.= " and p.ext_payment_id  = '" . $extPaymentId . "'";
+            }
+
+            $numRows = $db->query($sql)->num_rows;
+            if ($numRows > 0) {
+                return true;
+            }
+
+        default:
+            $object = null;
+            break;
     }
 
     if ($object) {
@@ -1133,13 +1144,10 @@ function verifyAlreadyPaid($source, $ref, $ext_payment_id = '')
         }
 
         if ($result) { // Order found.
-            if ($source == 'order' && $object->billed) {
-                return true;
-            } elseif ($source == 'invoice' && $object->paye == 1) {
-                return true;
-            } elseif ($source == 'donation' && $object->paid) {
-                return true;
-            } elseif ($source == 'membersubscription' && $object->datefin > dol_now()) {
+            if (($source == 'order' && $object->billed)
+                || ($source == 'invoice' && $object->paye == 1)
+                || ($source == 'donation' && $object->paid)
+                || ($source == 'membersubscription' && $object->datefin > dol_now())) {
                 return true;
             }
 
@@ -1155,31 +1163,31 @@ function verifyAlreadyPaid($source, $ref, $ext_payment_id = '')
  */
 function verifyAmount($source, $data)
 {
-    global $db, $langs, $notification_type;
+    global $db, $langs, $notificationType;
 
-    $order_id = $data['vads_order_id'];
-    $currency = LyraApi::findCurrencyByNumCode($data['vads_currency']);
+    $orderId = $data['vads_order_id'];
+    $currency = \Lyranetwork\Lyra\Sdk\Form\Api::findCurrencyByNumCode($data['vads_currency']);
     $amount = round($currency->convertAmountToFloat($data['vads_amount']), $currency->getDecimals());
 
     if ($source === 'invoice') {
         $invoice = new Facture($db);
-        $invoice->fetch('', $order_id);
+        $invoice->fetch('', $orderId);
 
         $factureAmount = (float) $invoice->total_ttc;
 
         if ($factureAmount !== (float) $amount) {
-            $alreadyPaid = verifyAlreadyPaid($source, $order_id);
+            $alreadyPaid = verifyAlreadyPaid($source, $orderId);
             if (! $alreadyPaid) {
-               setStatusNotePrivate($invoice, 'INVALID_AMOUNT', $order_id);
+               setStatusNotePrivate($invoice, 'INVALID_AMOUNT');
             } else { // If you want to notify already payment intead of invalid amount activate this code.
-                print_notification_message($data, $source, 'SUCCESS', SUCCESSFUL_ALREADY_PAYMENT);
+                printNotificationMessage($data, $source, 'SUCCESS-BIS');
             }
 
-            if ($notification_type !== 'IPN') {
+            if ($notificationType !== 'IPN') {
                 $additionalInfo = array($langs->trans('LYRA_IPN_AMOUNT', $amount), $langs->trans('LYRA_INVOICE_AMOUNT', strval($factureAmount)));
             }
 
-            print_notification_message($data, $source, 'INVALID_AMOUNT', ERROR_INVALID_AMOUNT . '. INVOICE AMOUNT = ' . strval($factureAmount) . '; IPN AMOUNT VALUE = ' . $amount, $additionalInfo);
+            printNotificationMessage($data, $source, 'INVALID_AMOUNT', $additionalInfo);
             return false;
         }
 
@@ -1192,7 +1200,7 @@ function verifyAmount($source, $data)
 /**
  * Set field private_note on database with the status from answer IPN.
  */
-function setStatusNotePrivate($invoice, $trans_status, $order_id)
+function setStatusNotePrivate($invoice, $transStatus)
 {
     global $db;
 
@@ -1200,21 +1208,21 @@ function setStatusNotePrivate($invoice, $trans_status, $order_id)
     $id = $invoice->id;
     $db->begin();
 
-    $note_private = $invoice->note_private; // Example '##STATUS=WAITING_AUTHORISATION## Test Private Note New Facture'.
-    $key   = '##';
+    $notePrivate = $invoice->note_private; // Example '##STATUS=WAITING_AUTHORISATION## Test Private Note New Facture'.
+    $key = '##';
 
     // If exists another pending status is eliminated.
-    $pos = strripos($note_private, $key); // The last appearance is found.
+    $pos = strripos($notePrivate, $key); // The last appearance is found.
     if ($pos) {
-        $note_private = substr($note_private, $pos + 2);
+        $notePrivate = substr($notePrivate, $pos + 2);
     }
 
     // Generate and replace new status.
     $key = '##';
-    $note_private = $key . 'STATUS=' . $trans_status . $key . $note_private;
+    $notePrivate = $key . 'STATUS=' . $transStatus . $key . $notePrivate;
 
     $sql = 'UPDATE ' . MAIN_DB_PREFIX . 'facture SET ';
-    $sql .= " note_private='" . $note_private . "'";
+    $sql .= " note_private='" . $notePrivate . "'";
     $sql .= ' WHERE rowid = ' . $id;
 
     $resql = $db->query($sql);
@@ -1224,10 +1232,8 @@ function setStatusNotePrivate($invoice, $trans_status, $order_id)
 
     if (! $error) {
         $db->commit();
-        lyra_syslog('Set Private Note = ' . $trans_status, $order_id);
     } else {
         $db->rollback();
-        lyra_syslog('Not Set Private Note = ' . $trans_status, $order_id);
     }
 }
 
@@ -1239,40 +1245,130 @@ function setStatusNotePrivate($invoice, $trans_status, $order_id)
  * @param  string   $supportMessage Message sent to IPN socket
  * @param  array    $additionalInfo Additional Info to add to final notification
  */
-function print_notification_message($data, $source, $messageType, $supportMessage, $additionalInfo = array(), $verify_context = 0)
+function printNotificationMessage($data, $source, $messageType, $additionalInfo = array())
 {
-    global $notification_type, $conf;
+    global $notificationType;
 
-    $ctx_mode = $conf->global->LYRA_CTX_MODE;
-    if ($verify_context == 0) {
-        $ctx_mode = 'PRODUCTION';
-    }
+    lyraSyslog("End processing {$notificationType}.");
 
-    $supportMessage = 'DOLIBARR - ' . $supportMessage;
-    if ($additionalInfo) {
-        foreach($additionalInfo as $msg) {
-            $supportMessage .= ' || ' . $msg;
-        }
-    }
-
-    if ($messageType === 'ERROR' || $messageType === 'INVALID_SIGNATURE' || $messageType === 'INVALID_AMOUNT' ) {
-        $supportMessage .= ' || KO';
-        $log = LOG_ERR;
+    if ($notificationType !== 'IPN') {
+        printPaymentResult($data, $source, $messageType, $additionalInfo);
+        exit;
     } else {
-        $supportMessage .= ' || OK';
-        $log = LOG_INFO;
-    }
+        switch ($messageType) {
+            case 'PAYMENT_ERROR':
+                $msg = 'KO-Payment failure.';
+                break;
 
-    lyra_syslog($supportMessage, $data['vads_order_id'], $log);
-    if ($notification_type !== 'IPN') {
-        if ($ctx_mode === 'PRODUCTION') {
-            print_result_payment($data, $source, $messageType, $additionalInfo);
-            exit;
-        } else {
-            throw new Exception($supportMessage);
+            case 'INVALID_SIGNATURE':
+                $msg = 'KO-An error occurred while computing the signature.';
+                break;
+
+            case 'INVALID_AMOUNT':
+                $msg = 'KO-Total paid is different from order amount.';
+                break;
+
+            case 'ABANDONED':
+                $msg = 'KO-Payment abandoned or expired.';
+                break;
+
+            case 'SUCCESS':
+            case 'PENDING':
+                $msg = "OK-Accepted payment, {$source} has been updated.";
+                break;
+
+            case 'SUCCESS-BIS':
+                $msg = 'OK-Accepted payment, already registered.';
+                break;
+
+            default:
+                $msg = 'KO' . (isset($additionalInfo) && is_array($additionalInfo) ? '-' . $additionalInfo[0] : '');
+                break;
         }
-    } else {
-        print $supportMessage;
+
+        print $msg;
         exit;
     }
+}
+
+function getResponseMessage($lyraResponse)
+{
+    global $langs;
+
+    $message = '';
+
+    // Save transaction details to payment object.
+    if ($lyraResponse->get('card_brand') === 'MULTI') {
+        $data = json_decode($lyraResponse->get('payment_seq'), true);
+        $transactions = $data['transactions'];
+
+        $message .= "<b>". $langs->trans('LYRA_TRANSACTIONS') . ": </b>";
+
+        foreach ($transactions as $trs) {
+            $message .= "<p>" . getTransInfo($trs) . "</p>" ;
+        }
+    } else {
+        $message .= getTransInfo($lyraResponse) ;
+    }
+
+    return $message;
+}
+
+function getTransInfo($trs)
+{
+    global $langs;
+
+    $paymentMeans = getTransProperty($trs, 'wallet') ?? getTransProperty($trs, 'card_brand');
+
+    $message = "<br><b>" . $langs->trans('LYRA_MEANS_PAYMENT') . ": </b>" . $paymentMeans;
+
+    $cardNumber = getTransProperty($trs, 'card_number');
+    if (checkRegex(modLyra::MASKED_CARD_NUMBER_REGEX, $cardNumber)) {
+        $message .= "<br><b>" . $langs->trans('LYRA_CARD_NUMBER') . ': </b>' . $cardNumber;
+    }
+
+    if (($expiryMonth = getTransProperty($trs, 'expiry_month')) & ($expiryYear = getTransProperty($trs, 'expiry_year'))) {
+        $expiry = str_pad($expiryMonth, 2, '0', STR_PAD_LEFT) . " / " . $expiryYear;
+        $message .= "<br><b>" . $langs->trans('LYRA_EXPIRATION_DATE') . ": </b>" . $expiry;
+    }
+
+    // Transaction status.
+    $message .= "<br><b>" . $langs->trans('LYRA_TRANS_STATUS') . ": </b>" . getTransProperty($trs,'trans_status');
+
+    // Transaction UUID.
+    $message .= "<br><b>" . $langs->trans('LYRA_TRANS_UUID') . ": </b>" . getTransProperty($trs,'trans_uuid');
+
+    // 3DS extra message.
+    $message .= "<br><b>" . $langs->trans('LYRA_THREEDS_AUTH') . ": </b>";
+    if ($threedsStatus = getTransProperty($trs, 'threeds_status')) {
+        $message .= getThreedsStatus($threedsStatus);
+        $message .= ($threedsAuthType = getTransProperty($trs, 'threeds_auth_type')) ? "<br><b>" . $langs->trans('LYRA_THREEDS_AUTH_TYPE') . ": </b>" . $threedsAuthType : '';
+    } else {
+        $message .= 'UNAVAILABLE';
+    }
+
+    return $message;
+}
+
+function getTransProperty($transObject, $propertyName)
+{
+    if (is_array($transObject) && ! empty($transObject)) {
+        return isset($transObject[$propertyName]) ? $transObject[$propertyName] : null;
+    } elseif ($transObject instanceof \Lyranetwork\Lyra\Sdk\Form\Response) {
+        return $transObject->get($propertyName);
+    }
+
+    return null;
+}
+
+function getThreedsStatus($status)
+{
+    $threedsStatuses = [
+        'Y' => 'SUCCESS',
+        'N' => 'FAILED',
+        'U' => 'UNAVAILABLE',
+        'A' =>'ATTEMPT'
+    ];
+
+    return isset($threedsStatuses[$status]) ? $threedsStatuses[$status] : $status;
 }

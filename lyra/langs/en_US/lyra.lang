@@ -18,37 +18,32 @@ LYRA_MODULE_INFORMATION = MODULE INFORMATION
 LYRA_DEVELOPPED_BY = Developed by
 LYRA_CONTACT_EMAIL = Contact us
 LYRA_MODULE_VERSION = Module version
-LYRA_GATEWAY_VERSION = Gateway version
+LYRA_CLICK_HERE = Click here
+LYRA_MODULE_DOC_LINK = Click to view the module configuration documentation
 
 # Payment gateway section.
 LYRA_PAYMENT_GATEWAY_ACCESS = PAYMENT GATEWAY ACCESS
 LYRA_SITE_ID = Shop ID
-LYRA_SITE_ID_DESC = The identifier provided.
+LYRA_SITE_ID_DESC = The identifier provided by Lyra Collect.
 LYRA_KEY_TEST = Key in test mode
-LYRA_KEY_TEST_DESC = Key provided for test mode (available in Back Office).
+LYRA_KEY_TEST_DESC = Key provided for test mode (available in Lyra Expert Back Office).
 LYRA_KEY_PROD = Key in production mode
-LYRA_KEY_PROD_DESC = Key provided for production mode (available in Back Office after enabling production mode).
+LYRA_KEY_PROD_DESC = Key provided for production mode (available in Lyra Expert Back Office after enabling production mode).
 LYRA_CTX_MODE = Mode
 LYRA_CTX_MODE_DESC = The context mode of this module.
-LYRA_SIGN_ALGO = Signature algorithm
-LYRA_SIGN_ALGO_DESC = Algorithm used to compute the payment form signature. You must select HMAC-SHA-256 on your Back Office.
 LYRA_URL_CHECK = Instant Payment Notification URL
-LYRA_URL_CHECK_DESC = URL to copy into your Merchant Back Office (Settings > Notification rules > Notification URL at the end of payment and Notification URL about an operation coming from the Back Office). Copy the URL in the fields of the two sections.
-LYRA_GATEWAY_URL = Payment page URL
-LYRA_GATEWAY_URL_DESC = Link to the payment page.
+LYRA_URL_CHECK_DESC = URL to copy into your Lyra Expert Back Office > Settings > Notification rules. In multistore mode, notification URL is the same for all the stores.
 
 # REST API section.
 LYRA_REST_API = REST API SETTINGS
-LYRA_REST_API_DESC = REST API keys are available in your Back Office (menu: Settings > Shops > REST API keys).
+LYRA_REST_API_DESC = REST API keys are available in your Lyra Expert Back Office (menu: Settings > Shops > REST API keys).
 LYRA_REST_API_KEY_TEST = Test password
 LYRA_REST_API_KEY_PROD = Production password
 LYRA_REST_API_PUBLIC_KEY_TEST = Public test key
 LYRA_REST_API_PUBLIC_KEY_PROD = Public production key
 LYRA_REST_API_HMAC_256_KEY_TEST = HMAC-SHA-256 test key
 LYRA_REST_API_HMAC_256_KEY_PROD = HMAC-SHA-256 production key
-LYRA_REST_API_URL = REST API server URL
-LYRA_REST_API_CLIENT_STATIC_URL = JavaScript client URL
-LYRA_REST_API_URL_CHECK = API REST Notification URL
+LYRA_REST_API_URL_CHECK = REST API Notification URL
 
 # Payment page section.
 LYRA_PAYMENT_PAGE = PAYMENT PAGE
@@ -57,19 +52,10 @@ LYRA_LANGUAGE = Default Language
 LYRA_LANGUAGE_DESC = Default language on the payment page.
 LYRA_AVAILABLE_LANGUAGES = Available languages
 LYRA_AVAILABLE_LANGUAGES_DESC = Languages available on the payment page. If you do not select any, all the supported languages will be available.
-LYRA_CAPTURE_DELAY = Capture delay
-LYRA_CAPTURE_DELAY_DESC = The number of days before the bank capture (adjustable in your Back Office).
-LYRA_VALIDATION_MODE = Validation mode
-LYRA_VALIDATION_MODE_DESC = If manual is selected, you will have to confirm payments manually in your Back Office.
-
-# Payment page customization section.
-LYRA_PAGE_CUSTOMIZATION = PAYMENT PAGE CUSTOMIZE
-LYRA_THEME_CONFIG = Theme configuration
-LYRA_THEME_CONFIG_DESC = The theme configuration to customize the payment page.
-LYRA_SHOP_NAME = Shop name
-LYRA_SHOP_NAME_DESC = Shop name to display on the payment page. Leave blank to use gateway configuration.
-LYRA_SHOP_URL = Shop URL
-LYRA_SHOP_URL_DESC = Shop URL to display on the payment page. Leave blank to use gateway configuration.
+LYRA_CAPTURE_DELAY = Capture delay (if applicable)
+LYRA_CAPTURE_DELAY_DESC = The number of days before the bank capture (adjustable in your Lyra Expert Back Office).
+LYRA_VALIDATION_MODE = Validation mode (if applicable)
+LYRA_VALIDATION_MODE_DESC = If manual is selected, you will have to confirm payments manually in your Lyra Expert Back Office.
 
 #  Redirection section.
 LYRA_RETURN_TO_SHOP = RETURN TO SHOP
@@ -92,7 +78,16 @@ LYRA_CARD_INFO_MODE = Card data entry mode
 LYRA_CARD_INFO_MODE_DESC = Select how the card data will be entered. Attention, to use bank data acquisition on the merchant site, you must ensure that you have subscribed to this option with Lyra Collect.
 LYRA_CARD_INFO_MODE_FORM = Bank data acquisition on payment gateway
 LYRA_CARD_INFO_MODE_EMBEDDED = Embedded payment fields on merchant site (REST API)
-LYRA_CARD_INFO_MODE_POPIN = Embedded payment fields in a pop-in (REST API)
+LYRA_CARD_INFO_MODE_EMBEDDED_EXT_WITH_LOGOS = Embedded payment fields extended on merchant site with logos (REST API)
+LYRA_CARD_INFO_MODE_EMBEDDED_EXT_WITHOUT_LOGOS = Embedded payment fields extended on merchant site without logos (REST API)
+LYRA_POPIN_MODE = Display in a pop-in
+LYRA_POPIN_MODE_DESC = This option allows to display the embedded payment fields in a pop-in.
+LYRA_EMBEDDED_THEME = Theme
+LYRA_EMBEDDED_THEME_DESC = Select a theme to use to display the embedded payment fields.
+LYRA_COMPACT_MODE = Compact mode
+LYRA_COMPACT_MODE_DESC = This option allows to display the embedded payment fields in a compact mode.
+LYRA_RETRY_NUMBER = Payment attempts number
+LYRA_RETRY_NUMBER_DESC = Maximum number of payment by cards retries after a failed payment (between 0 and 2). If blank, the gateway default value is 1.
 
 # Dolibarr section.
 LYRA_DOLIBARR_SETTINGS = DOLIBARR PARAMETERS
@@ -100,7 +95,7 @@ LYRA_DOLIBARR_BANK_ACCOUNT = Bank account
 LYRA_DOLIBARR_BANK_ACCOUNT_DESC = Default bank account to save payments. The "Banks and Cash" module must be enabled.
 
 # Admin page messages.
-LYRA_VALIDATION_MODE_BACK_OFFICE_CONF = Back Office configuration
+LYRA_VALIDATION_MODE_BACK_OFFICE_CONF = Lyra Expert Back Office configuration
 LYRA_VALIDATION_MODE_AUTOMATIC = Automatic
 LYRA_VALIDATION_MODE_MANUAL = Manual
 
@@ -112,6 +107,7 @@ LYRA_PAY_BUTTON = Pay with Lyra Collect
 LYRA_PAY_BUTTON_MESSAGE = Variety of payment methods
 LYRA_UNSUPPORTED_CURRENCY_MESSAGE = Lyra Collect does not support your configuration currency.
 LYRA_SANDBOX_MESSAGE = You are currently in the Lyra Collect "TEST" mode.
+LYRA_REST_ERROR_MSG = Something went wrong while processing your payment request. Please try again later.
 
 # Languages list.
 GERMAN = German
@@ -159,24 +155,20 @@ NewLyraPaymentReceivedText = A new credit card payment has been received, here i
 LYRA_PAYMENT_FORM = Payment form
 LYRA_THANK_FOR_PAYMENT_TEXT = Thank you for your payment!
 LYRA_SUCCESS_PAYMENT_TEXT = The payment was successful. Your payment was registered successfully.
+LYRA_PENDING_PAYMENT_TEXT = Awaiting payment verification
+LYRA_PENDING_PAYMENT_MSG = Your invoice is awaiting payment verification.
 LYRA_ERROR_PAYMENT_TEXT = Error during payment!
 LYRA_ERROR_PAYMENT_MSG = An error has occurred during the payment process. Please, try again later.
 LYRA_REFUSED_PAYMENT_TEXT = Payment failed
 LYRA_REFUSED_PAYMENT_MSG = Your payment was not accepted. Please, try again later.
 LYRA_CANCELLED_PAYMENT_TEXT = Payment cancelled
 LYRA_CANCELLED_PAYMENT_MSG = Your request for payment has been cancelled.
-LYRA_ABANDONED_PAYMENT_TEXT = Payment abandoned
-LYRA_ABANDONED_PAYMENT_DESC = Your request for payment has been abandoned.
 
 LYRA_TRY_AGAIN = Try Again
 LYRA_DETAILS = Detail...
 
-LYRA_PENDING_PAYMENT = Awaiting payment verification
-LYRA_PENDING_PAYMENT_DESC = Your invoice is awaiting payment verification.
-
 LYRA_INVALID_SIGNATURE = Error during the payment process
 LYRA_INVALID_SIGNATURE_DESC = An error has occurred during the payment process. Please contact our customer support.
-LYRA_INVALID_SIGNATURE_TEST_DESC = An error has ocurred during signature calculation.
 
 LYRA_INVALID_AMOUNT = Invalid amount
 LYRA_INVALID_AMOUNT_DESC = The amount of the payment response is different from the invoice amount.
@@ -196,11 +188,14 @@ LYRA_TO_COMPLETE = To complete
 LYRA_PAYMENT_CODE = Payment code
 
 # Messages for admin page validations.
-LYRA_ERROR_SITE_ID = Shop ID is not defined.
-LYRA_ERROR_KEY = Key is not defined. Mode = %s.
-LYRA_ERROR_URL_SERVER = Server URL is not defined. Mode = %s.
-LYRA_ERROR_PUBLIC_KEY = Public key is not defined. Mode = %s.
-LYRA_ERROR_HMAC_SHA_256_KEY = HMAC-SHA-256 key is not defined. Mode = %s.
-LYRA_ERROR_URL_SERVER_API = REST API server URL is not defined. Mode = %s.
-LYRA_ERROR_URL_CLIENT_JS = JavaScript client URL is not defined. Mode = %s.
+LYRA_INVALID_VALUE = Invalid value for field '%s'
 LYRA_WARNING_BANK = Bank module inactive or no bank account created. The payment will not be registered in the bank account.
+
+LYRA_TRANSACTIONS = Transactions
+LYRA_MEANS_PAYMENT = Means of payment
+LYRA_CARD_NUMBER = Card number
+LYRA_EXPIRATION_DATE = Expiration date
+LYRA_TRANS_STATUS = Transaction status
+LYRA_TRANS_UUID = Transaction UUID
+LYRA_THREEDS_AUTH = 3DS Authentication
+LYRA_THREEDS_AUTH_TYPE = Authentication type
