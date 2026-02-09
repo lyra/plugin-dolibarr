@@ -15,40 +15,46 @@ include_once DOL_DOCUMENT_ROOT . '/core/modules/DolibarrModules.class.php';
  */
 class modLyra extends DolibarrModules
 {
-    private static $MODULE_NUMBER_DOLIBARR = 230059;
+    const MODULE_NUMBER_DOLIBARR = 230059;
 
-    private static $GATEWAY_CODE = 'Lyra';
-    private static $GATEWAY_NAME = 'Lyra Collect';
-    private static $BACKOFFICE_NAME = 'Lyra Expert';
-    private static $GATEWAY_URL = 'https://secure.lyra.com/vads-payment/';
-    private static $SITE_ID = '12345678';
-    private static $KEY_TEST = '1111111111111111';
-    private static $KEY_PROD = '2222222222222222';
-    private static $CTX_MODE = 'TEST';
-    private static $SIGN_ALGO = 'SHA-256';
-    private static $LANGUAGE = 'en';
-    private static $SUPPORT_EMAIL = 'support-ecommerce@lyra-collect.com';
+    const GATEWAY_CODE = 'Lyra';
+    const GATEWAY_NAME = 'Lyra Collect';
+    const BACKOFFICE_NAME = 'Lyra Expert';
+    const GATEWAY_URL = 'https://secure.lyra.com/vads-payment/';
+    const SITE_ID = '12345678';
+    const KEY_TEST = '1111111111111111';
+    const KEY_PROD = '2222222222222222';
+    const CTX_MODE = 'TEST';
+    const SIGN_ALGO = 'SHA-256';
+    const LANGUAGE = 'en';
+    const SUPPORT_EMAIL = 'https://support.lyra.com/hc/fr/requests/new';
 
-    private static $REST_URL = 'https://api.lyra.com/api-payment/';
-    private static $STATIC_URL = 'https://api.lyra.com/static/';
+    const REST_URL = 'https://api.lyra.com/api-payment/';
+    const STATIC_URL = 'https://static.lyra.com/static/';
 
-    private static $CMS_IDENTIFIER = 'Dolibarr_11.x-14.x';
-    private static $PLUGIN_VERSION = '1.0.3';
-    private static $GATEWAY_VERSION = 'V2';
+    const CMS_IDENTIFIER = 'Dolibarr_22.x';
+    const PLUGIN_VERSION = '2.0.0';
 
-    private static $FORM_TYPE = '1';
-    private static $RETURN_MODE = 'GET';
+    const RETURN_MODE = 'POST';
 
-    private static $REDIRECT_SUCCESS_TIMEOUT = '5';
-    private static $REDIRECT_ERROR_TIMEOUT = '5';
+    const REDIRECT_SUCCESS_TIMEOUT = '5';
+    const REDIRECT_ERROR_TIMEOUT = '5';
 
-    private static $VALIDATION_MODE = '0';
-
-    private static $PROCESS_URL = '/lyra/public/process.php';
+    const PROCESS_URL = '/lyra/public/process.php';
 
     const MODE_FORM = '1';
-    const MODE_EMBEDDED = '4';
-    const MODE_POPIN = '5';
+    const MODE_EMBEDDED = '2';
+    const MODE_EMBEDDED_EXT_WITH_LOGOS = '3';
+    const MODE_EMBEDDED_EXT_WITHOUT_LOGOS = '4';
+
+    const SITE_ID_REGEX = '^\d{8}$';
+    const KEY_REGEX = '^[A-Za-z0-9]{16}$';
+    const TEST_PRIVATE_KEY_REGEX = '^testpassword_[A-Za-z0-9]+$';
+    const PROD_PRIVATE_KEY_REGEX = '^prodpassword_[A-Za-z0-9]+$';
+    const TEST_PUBLIC_KEY_REGEX = ':testpublickey_[A-Za-z0-9]+$';
+    const PROD_PUBLIC_KEY_REGEX = ':publickey_[A-Za-z0-9]+$';
+    const HMAC_KEY_REGEX = '^[A-Za-z0-9]+$';
+    const MASKED_CARD_NUMBER_REGEX = '^[0-9]+XXXXXX[0-9]{4}$';
 
     /**
      * Constructor. Define names, constants, directories, boxes, permissions.
@@ -58,13 +64,14 @@ class modLyra extends DolibarrModules
     public function __construct($db)
     {
         global $langs, $conf;
+
         $this->db = $db;
 
         // Load translation.
         $langs->load('lyra@lyra');
 
         // Id for module (must be unique).
-        $this->numero = self::$MODULE_NUMBER_DOLIBARR;
+        $this->numero = self::MODULE_NUMBER_DOLIBARR;
         $this->rights_class = 'lyra';
         $this->family = "interface";
         $this->module_position = '50';
@@ -73,7 +80,7 @@ class modLyra extends DolibarrModules
         $this->descriptionlong = '';
         $this->editor_name = 'Lyra Network';
         $this->editor_url = 'https://www.lyra.com';
-        $this->version = self::$PLUGIN_VERSION;
+        $this->version = self::PLUGIN_VERSION;
         $this->const_name = 'MAIN_MODULE_' . strtoupper($this->name);
         $this->picto = 'lyra@lyra';
 
@@ -91,9 +98,13 @@ class modLyra extends DolibarrModules
             'js' => array(),
             'hooks' => array( // Hooks context managed by module.
                 'newpayment',
-                'paymentlib'
+                'paymentlib',
+                'invoicecard',
+                'ordercard'
             ),
-            'moduleforexternal' => 0
+            'moduleforexternal' => 0,
+            'websitetemplates' => 0,
+            'captcha' => 0
         );
 
         // Data directories to create when module is enabled.
@@ -106,39 +117,28 @@ class modLyra extends DolibarrModules
         $this->requiredby = array();
         $this->conflictwith = array();
         $this->langfiles = array("lyra@lyra");
-        $this->phpmin = array(5, 5); // Minimum version of PHP required by module.
-        $this->need_dolibarr_version = array(11, -3);
+        $this->phpmin = array(7, 0); // Minimum version of PHP required by module.
+        $this->need_dolibarr_version = array(22, 0);
         $this->warnings_activation = array();
         $this->warnings_activation_ext = array();
 
         // Constants.
         $this->const = array(
-            1 => array('LYRA_RETURN_MODE', 'chaine', self::$RETURN_MODE, '', 1),
-            2 => array('LYRA_REDIRECT_SUCCESS_TIMEOUT', 'chaine', self::$REDIRECT_SUCCESS_TIMEOUT, '', 1),
+            1 => array('LYRA_RETURN_MODE', 'chaine', self::RETURN_MODE, '', 1),
+            2 => array('LYRA_REDIRECT_SUCCESS_TIMEOUT', 'chaine', self::REDIRECT_SUCCESS_TIMEOUT, '', 1),
             3 => array('LYRA_REDIRECT_SUCCESS_MESSAGE', 'chaine', $langs->trans('LYRA_REDIRECT_MESSAGE_TEXT'), '', 1),
-            4 => array('LYRA_REDIRECT_ERROR_TIMEOUT', 'chaine', self::$REDIRECT_ERROR_TIMEOUT, '', 1),
+            4 => array('LYRA_REDIRECT_ERROR_TIMEOUT', 'chaine', self::REDIRECT_ERROR_TIMEOUT, '', 1),
             5 => array('LYRA_REDIRECT_ERROR_MESSAGE', 'chaine', $langs->trans('LYRA_REDIRECT_MESSAGE_TEXT'), '', 1),
-            6 => array('LYRA_VALIDATION_MODE', 'chaine', self::$VALIDATION_MODE, '', 1),
-            7 => array('LYRA_LANGUAGE', 'chaine', self::$LANGUAGE, '', 1),
-            8 => array('LYRA_URL_CHECK', 'chaine', dol_buildpath(self::$PROCESS_URL, 2), '', 1),
-            9 => array('LYRA_URL_RETURN', 'chaine', dol_buildpath(self::$PROCESS_URL, 2), '', 1),
-            10 => array('LYRA_CTX_MODE', 'chaine', self::$CTX_MODE, '', 1),
-            11 => array('LYRA_SIGN_ALGO', 'chaine', 'HMAC-SHA-256', '', 1),
-            12 => array('LYRA_REST_API_URL_CHECK', 'chaine', dol_buildpath(self::$PROCESS_URL, 2), '', 1),
-            13 => array('LYRA_GATEWAY_URL', 'chaine', self::$GATEWAY_URL, '', 1),
-            14 => array('LYRA_REST_API_URL', 'chaine', self::$REST_URL, '', 1),
-            15 => array('LYRA_REST_API_CLIENT_STATIC_URL', 'chaine', self::$STATIC_URL, '', 1),
-            16 => array('LYRA_SITE_ID', 'chaine', self::$SITE_ID, '', 1),
-            17 => array('LYRA_KEY_TEST', 'chaine', self::$KEY_TEST, '', 1),
-            18 => array('LYRA_KEY_PROD', 'chaine', self::$KEY_PROD, '', 1),
-            19 => array('LYRA_CARD_INFO_MODE', 'chaine', self::$FORM_TYPE, '', 1),
-            20 => array('LYRA_DEVELOPPED_BY', 'chaine', "Lyra Network (https://www.lyra.com/)", '', 1),
-            21 => array('LYRA_CONTACT_EMAIL', 'chaine', self::$SUPPORT_EMAIL, '', 1),
-            22 => array('LYRA_MODULE_VERSION', 'chaine', self::$PLUGIN_VERSION, '', 1),
-            23 => array('LYRA_GATEWAY_VERSION', 'chaine', self::$GATEWAY_VERSION, '', 1)
+            6 => array('LYRA_VALIDATION_MODE', 'chaine', '', '', 1),
+            7 => array('LYRA_LANGUAGE', 'chaine', self::LANGUAGE, '', 1),
+            8 => array('LYRA_CTX_MODE', 'chaine', self::CTX_MODE, '', 1),
+            9 => array('LYRA_SITE_ID', 'chaine', self::SITE_ID, '', 1),
+            10 => array('LYRA_KEY_TEST', 'chaine', self::KEY_TEST, '', 1),
+            11 => array('LYRA_KEY_PROD', 'chaine', self::KEY_PROD, '', 1),
+            12 => array('LYRA_CARD_INFO_MODE', 'chaine', self::MODE_EMBEDDED_EXT_WITH_LOGOS, '', 1)
         );
 
-        if (! isset($conf->lyra) || ! isset($conf->lyra->enabled)) {
+        if (! isModEnabled("lyra")) {
             $conf->lyra = new stdClass();
             $conf->lyra->enabled = 0;
         }
@@ -158,6 +158,7 @@ class modLyra extends DolibarrModules
         // Permissions provided by this module.
         $this->rights = array();
         $r = 0;
+
         // Declare new permissions.
         $this->rights[$r][0] = $this->numero + $r; // Permission id (must not be already used).
         $this->rights[$r][1] = 'Read objects of lyra'; // Permission label.
@@ -177,9 +178,6 @@ class modLyra extends DolibarrModules
 
         // Main menu entries.
         $this->menu = array();
-        $r = 0;
-        $r = 1;
-        $r = 1;
     }
 
     /**
@@ -192,9 +190,8 @@ class modLyra extends DolibarrModules
     public function init($options = '')
     {
         $result = $this->_load_tables('/lyra/sql/');
-        // Do not activate module if error 'not allowed' returned when loading module SQL queries.
         if ($result < 0) {
-            return -1;
+            return -1; // Do not activate module if error 'not allowed' returned when loading module SQL queries.
         }
 
         // Permissions.
@@ -215,21 +212,6 @@ class modLyra extends DolibarrModules
         return $this->_remove(array(), $options);
     }
 
-    /**
-     *  Return defaut values.
-     *
-     *  @param    string    $name    Static variable name
-     *  @return   string
-     */
-    public static function getDefault($name)
-    {
-        if (! is_string($name) || ! isset(self::$$name)) {
-            return '';
-        }
-
-        return self::$$name;
-    }
-
     public static function convertRestResult($answer)
     {
         if (! is_array($answer) || empty($answer)) {
@@ -237,79 +219,126 @@ class modLyra extends DolibarrModules
         }
 
         $transactions = self::getProperty($answer, 'transactions');
+        $multiPaymentMean = false;
 
         if (! is_array($transactions) || empty($transactions)) {
-            return array();
-        }
+            $transaction = $answer;
+        } else {
+            $transaction = $transactions[0];
 
-        $transaction = $transactions[0];
+            $multiPaymentMean = isset($transaction['transactionDetails']['cardDetails']['sequenceType'])
+                    && $transaction['transactionDetails']['cardDetails']['sequenceType'] == 'MULTI_PAYMENT_MEAN';
+        }
 
         $response = array();
 
-        $response['vads_result'] = self::getProperty($transaction, 'errorCode') ? self::getProperty($transaction, 'errorCode') : '00';
-        $response['vads_extra_result'] = self::getProperty($transaction, 'detailedErrorCode');
+        $response['vads_url_check_src'] = self::getProperty($answer, 'kr-src');
+        $response['vads_order_cycle'] = self::getProperty($answer, 'orderCycle');
+        $response['vads_order_status'] = self::getProperty($answer, 'orderStatus');
 
-        $response['vads_trans_status'] = self::getProperty($transaction, 'detailedStatus');
-        $response['vads_trans_uuid'] = self::getProperty($transaction, 'uuid');
-        $response['vads_operation_type'] = self::getProperty($transaction, 'operationType');
-        $response['vads_effective_creation_date'] = self::getProperty($transaction, 'creationDate');
-        $response['vads_payment_config'] = 'SINGLE'; // Only single payments are possible via REST API.
+        if (($customer = self::getProperty($answer, 'customer'))) {
+            $response['vads_cust_email'] = self::getProperty($customer, 'email');
 
-        if (($customer = self::getProperty($answer, 'customer')) && ($billingDetails = self::getProperty($customer, 'billingDetails'))) {
-            $response['vads_language'] = self::getProperty($billingDetails, 'language');
-        }
-
-        $response['vads_amount'] = self::getProperty($transaction, 'amount');
-        $response['vads_currency'] = LyraApi::getCurrencyNumCode(self::getProperty($transaction, 'currency')) ;
-
-        if (($metadata = self::getProperty($transaction, 'metadata')) && is_array($metadata)) {
-            foreach ($metadata as $key => $value) {
-                $response['vads_ext_info_' . $key] = $value;
+            if ($billingDetails = self::getProperty($customer, 'billingDetails')) {
+                $response['vads_language'] = self::getProperty($billingDetails, 'language');
             }
-        }
-
-        if (self::getProperty($transaction, 'paymentMethodToken')) {
-            $response['vads_identifier'] = self::getProperty($transaction, 'paymentMethodToken');
-            $response['vads_identifier_status'] = 'CREATED';
         }
 
         if ($orderDetails = self::getProperty($answer, 'orderDetails')) {
             $response['vads_order_id'] = self::getProperty($orderDetails, 'orderId');
         }
 
+        $response = self::convertRestTransaction($response, $transaction);
+
+        if ($multiPaymentMean) {
+            $payment_seq = array(
+                'trans_id' => $response['vads_trans_id'],
+                'transactions' => array()
+            );
+
+            foreach ($transactions as $trs) {
+                $payment_seq['transactions'][] = self::convertRestTransaction(array(), $trs, '');
+            }
+
+            $response['vads_card_brand'] = 'MULTI';
+            $response['vads_payment_seq'] = json_encode($payment_seq);
+            $response['vads_amount'] = self::getProperty($orderDetails, 'orderTotalAmount');
+            $response['vads_authorized_amount'] = self::getProperty($orderDetails, 'orderTotalAmount');
+        }
+
+        return $response;
+    }
+
+    private static function convertRestTransaction($response, $transaction, $prefix = 'vads_') {
+        $response[$prefix . 'result'] = self::getProperty($transaction, 'errorCode') ? self::getProperty($transaction, 'errorCode') : '00';
+        $response[$prefix . 'extra_result'] = self::getProperty($transaction, 'detailedErrorCode');
+
+        $response[$prefix . 'trans_status'] = self::getProperty($transaction, 'detailedStatus');
+        $response[$prefix . 'trans_uuid'] = self::getProperty($transaction, 'uuid');
+        $response[$prefix . 'operation_type'] = self::getProperty($transaction, 'operationType');
+        $response[$prefix . 'effective_creation_date'] = self::getProperty($transaction, 'creationDate');
+        $response[$prefix . 'payment_config'] = 'SINGLE'; // Only single payments are possible via REST API at this time.
+
+        $response[$prefix . 'amount'] = self::getProperty($transaction, 'amount');
+        $response[$prefix . 'currency'] = \Lyranetwork\Lyra\Sdk\Form\Api::getCurrencyNumCode(self::getProperty($transaction, 'currency'));
+
+        if ($paymentToken = self::getProperty($transaction, 'paymentMethodToken')) {
+            $response[$prefix . 'identifier'] = $paymentToken;
+            $response[$prefix . 'identifier_status'] = 'CREATED';
+        }
+
+        if (($metadata = self::getProperty($transaction, 'metadata')) && is_array($metadata)) {
+            foreach ($metadata as $key => $value) {
+                $response[$prefix . 'ext_info_' . $key] = $value;
+            }
+        }
+
         if ($transactionDetails = self::getProperty($transaction, 'transactionDetails')) {
-            $response['vads_sequence_number'] = self::getProperty($transactionDetails, 'sequenceNumber');
+            $response[$prefix . 'sequence_number'] = self::getProperty($transactionDetails, 'sequenceNumber');
 
             // Workarround to adapt to REST API behavior.
             $effectiveAmount = self::getProperty($transactionDetails, 'effectiveAmount');
-            $effectiveCurrency = LyraApi::getCurrencyNumCode(self::getProperty($transactionDetails, 'effectiveCurrency'));
+            $effectiveCurrency = \Lyranetwork\Lyra\Sdk\Form\Api::getCurrencyNumCode(self::getProperty($transactionDetails, 'effectiveCurrency'));
 
             if ($effectiveAmount && $effectiveCurrency) {
-                $response['vads_effective_amount'] = $response['vads_amount'];
-                $response['vads_effective_currency'] = $response['vads_currency'];
-                $response['vads_amount'] = $effectiveAmount;
-                $response['vads_currency'] = $effectiveCurrency;
+                $response[$prefix . 'effective_amount'] = $response[$prefix . 'amount'];
+                $response[$prefix . 'effective_currency'] = $response[$prefix . 'currency'];
+                $response[$prefix . 'amount'] = $effectiveAmount;
+                $response[$prefix . 'currency'] = $effectiveCurrency;
             }
 
-            $response['vads_warranty_result'] = self::getProperty($transactionDetails, 'liabilityShift');
+            $response[$prefix . 'warranty_result'] = self::getProperty($transactionDetails, 'liabilityShift');
+            $response[$prefix . 'wallet'] = self::getProperty($transactionDetails, 'wallet');
 
             if ($cardDetails = self::getProperty($transactionDetails, 'cardDetails')) {
-                $response['vads_trans_id'] = self::getProperty($cardDetails, 'legacyTransId'); // Deprecated.
-                $response['vads_presentation_date'] = self::getProperty($cardDetails, 'expectedCaptureDate');
+                $response[$prefix . 'trans_id'] = self::getProperty($cardDetails, 'legacyTransId'); // Deprecated.
+                $response[$prefix . 'presentation_date'] = self::getProperty($cardDetails, 'expectedCaptureDate');
 
-                $response['vads_card_brand'] = self::getProperty($cardDetails, 'effectiveBrand');
-                $response['vads_card_number'] = self::getProperty($cardDetails, 'pan');
-                $response['vads_expiry_month'] = self::getProperty($cardDetails, 'expiryMonth');
-                $response['vads_expiry_year'] = self::getProperty($cardDetails, 'expiryYear');
+                $response[$prefix . 'card_brand'] = self::getProperty($cardDetails, 'effectiveBrand');
+                $response[$prefix . 'card_number'] = self::getProperty($cardDetails, 'pan');
+                $response[$prefix . 'expiry_month'] = self::getProperty($cardDetails, 'expiryMonth');
+                $response[$prefix . 'expiry_year'] = self::getProperty($cardDetails, 'expiryYear');
+
+                $response[$prefix . 'payment_option_code'] = self::getProperty($cardDetails, 'installmentNumber');
+
 
                 if ($authorizationResponse = self::getProperty($cardDetails, 'authorizationResponse')) {
-                    $response['vads_auth_result'] = self::getProperty($authorizationResponse, 'authorizationResult');
+                    $response[$prefix . 'auth_result'] = self::getProperty($authorizationResponse, 'authorizationResult');
+                    $response[$prefix . 'authorized_amount'] = self::getProperty($authorizationResponse, 'amount');
                 }
 
-                if (($threeDSResponse = self::getProperty($cardDetails, 'threeDSResponse'))
-                    && ($authenticationResultData = self::getProperty($threeDSResponse, 'authenticationResultData'))) {
-                        $response['vads_threeds_cavv'] = self::getProperty($authenticationResultData, 'cavv');
-                        $response['vads_threeds_status'] = self::getProperty($authenticationResultData, 'status');
+                if (($authenticationResponse = self::getProperty($cardDetails, 'authenticationResponse'))
+                    && ($value = self::getProperty($authenticationResponse, 'value'))) {
+                        $response[$prefix . 'threeds_status'] = self::getProperty($value, 'status');
+                        $response[$prefix . 'threeds_auth_type'] = self::getProperty($value, 'authenticationType');
+                        if ($authenticationValue = self::getProperty($value, 'authenticationValue')) {
+                            $response[$prefix . 'threeds_cavv'] = self::getProperty($authenticationValue, 'value');
+                        }
+                    } elseif (($threeDSResponse = self::getProperty($cardDetails, 'threeDSResponse'))
+                        && ($authenticationResultData = self::getProperty($threeDSResponse, 'authenticationResultData'))) {
+                            $response[$prefix . 'threeds_cavv'] = self::getProperty($authenticationResultData, 'cavv');
+                            $response[$prefix . 'threeds_status'] = self::getProperty($authenticationResultData, 'status');
+                            $response[$prefix . 'threeds_auth_type'] = self::getProperty($authenticationResultData, 'threeds_auth_type');
                     }
             }
 
@@ -318,6 +347,10 @@ class modLyra extends DolibarrModules
                     $response['vads_risk_control'] = '';
 
                     foreach ($riskControl as $value) {
+                        if (! isset($value['name']) || ! isset($value['result'])) {
+                            continue;
+                        }
+
                         $response['vads_risk_control'] .= "{$value['name']}={$value['result']};";
                     }
                 }
@@ -342,17 +375,17 @@ class modLyra extends DolibarrModules
 
     public static function checkHash($data, $key)
     {
-        $supported_sign_algos = array('sha256_hmac');
+        $supportedSignAlgos = array('sha256_hmac');
 
         // Check if the hash algorithm is supported.
-        if (! in_array($data['kr-hash-algorithm'], $supported_sign_algos)) {
+        if (! in_array($data['kr-hash-algorithm'], $supportedSignAlgos)) {
             return false;
         }
 
         // On some servers, / can be escaped.
-        $kr_answer = str_replace('\/', '/', $data['kr-answer']);
+        $krAnswer = str_replace('\/', '/', $data['kr-answer']);
 
-        $hash = hash_hmac('sha256', $kr_answer, $key);
+        $hash = hash_hmac('sha256', $krAnswer, $key);
 
         // Return true if calculated hash and sent hash are the same.
         return ($hash === $data['kr-hash']);

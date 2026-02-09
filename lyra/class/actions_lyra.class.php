@@ -8,16 +8,13 @@
  * @license   http://www.gnu.org/licenses/gpl.html GNU General Public License (GPL v3)
  */
 
-/**
- * This file contains all methods to be executed as hooks.
- */
-
-$langs->load("lyra@lyra");
+require_once DOL_DOCUMENT_ROOT.'/core/class/commonhookactions.class.php';
+dol_include_once('/lyra/lib/lyra.lib.php');
 
 /**
  * Class ActionsLyra
  */
-class ActionsLyra
+class ActionsLyra extends CommonHookActions
 {
     /**
      * @var DoliDB database handler.
@@ -51,7 +48,10 @@ class ActionsLyra
      */
     public function __construct($db)
     {
+        global $langs;
+
         $this->db = $db;
+        $langs->load("lyra@lyra");
     }
 
     /**
@@ -67,6 +67,7 @@ class ActionsLyra
     public function getNomUrl($parameters, &$object, &$action)
     {
         $this->resprints = '';
+
         return 0;
     }
 
@@ -81,49 +82,103 @@ class ActionsLyra
      */
     public function doAddButton($parameters, &$object, &$action, $hookmanager)
     {
-        dol_include_once('/lyra/lib/lyra.lib.php');
+        global $db, $langs, $conf;
 
-        global $conf, $langs;
-
-        $error = 0; // Error counter.
+        $this->error = 0; // Error counter.
         $source = GETPOST("s", 'alpha') ? GETPOST("s", 'alpha') : GETPOST("source", 'alpha');
 
         if (in_array($parameters['currentcontext'], array('newpayment'))) { // Do something only for the context 'somecontext1' or 'somecontext2'.
-            $paymentmethod = $parameters['paymentmethod'];
+            $paymentMethod = $parameters['paymentmethod'];
 
-            if (! empty($conf->lyra->enabled) && ! lyraCanUseCurrency() && ($conf->global->LYRA_CTX_MODE == 'TEST' || GETPOST('forcesandbox', 'int'))) {
+            if (isModEnabled('lyra') && ! lyraCanUseCurrency() && (getDolGlobalString('LYRA_CTX_MODE') == 'TEST' || GETPOST('forcesandbox', 'int'))) {
                 dol_htmloutput_mesg($langs->trans('LYRA_UNSUPPORTED_CURRENCY_MESSAGE'), '', 'warning');
-            } elseif ((empty($paymentmethod) || $paymentmethod == 'lyra') && ! empty($conf->lyra->enabled) && lyraCanUseCurrency()) {
-                if ($conf->global->LYRA_CTX_MODE == 'TEST' || GETPOST('forcesandbox', 'int')) { // We can force sandbox with param 'forcesandbox'.
+            } elseif ((empty($paymentMethod) || $paymentMethod == 'lyra') && isModEnabled('lyra') && lyraCanUseCurrency()) {
+                if (getDolGlobalString('LYRA_CTX_MODE') == 'TEST' || GETPOST('forcesandbox', 'int')) {
                     dol_htmloutput_mesg($langs->trans('LYRA_SANDBOX_MESSAGE'), '', 'warning');
                 }
 
-                if (empty($conf->banque->enabled) || empty($conf->global->LYRA_DOLIBARR_BANK_ACCOUNT) || ($conf->global->LYRA_DOLIBARR_BANK_ACCOUNT == -1)) {
+                if (! isModEnabled('bank') || empty(getDolGlobalString('LYRA_DOLIBARR_BANK_ACCOUNT')) || (getDolGlobalString('LYRA_DOLIBARR_BANK_ACCOUNT') == -1)) {
                     dol_htmloutput_mesg($langs->trans('LYRA_WARNING_BANK'), '', 'warning');
                 }
 
                 if ($source === 'invoice' || ! $source) {
-                    $result =  '<br>';
+                    $result = '<br>';
                     $result .= '<div class="button buttonpayment" id="div_dopayment_lyra">';
                     $result .= '<span class="fa fa-credit-card"></span>';
                     $result .= '<input class="" type="submit" id="dopayment_lyra" name="dopayment_lyra" value="' . $langs->trans("LYRA_PAY_BUTTON") . '">';
                     $result .= '<br>';
                     $result .= '<span class="buttonpaymentsmall">' . $langs->trans("LYRA_PAY_BUTTON_MESSAGE") . '</span>';
                     $result .= '</div>';
-                    $result .= '<script>
-                                    $( document ).ready(function() {
-                                        $("#div_dopayment_lyra").click(function() {
-                                            $("#dopayment_lyra").click();
-                                        });
-                                        $("#dopayment_lyra").click(function(e) {
-                                            $("#div_dopayment_lyra").css( \'cursor\', \'wait\' );
-                                            e.stopPropagation();
-                                            return true;
-                                        });
-                                    });
-                                </script>
-                                ';
-                    print $result;
+
+                    $script = '<script>
+                                   $(document).ready(function() {
+                                       $("#div_dopayment_lyra").click(function() {
+                                           $("#dopayment_lyra").click();
+                                       });
+
+                                       $("#dopayment_lyra").click(function(e) {
+                                           $("#div_dopayment_lyra").css( \'cursor\', \'wait\' );
+                                           e.stopPropagation();
+
+                                           return true;
+                                       });
+                                   });
+                               </script>';
+
+                    if (lyraEmbeddedPayment() && getDolGlobalString('LYRA_POPIN_MODE')) {
+                        $ref = GETPOST('ref');
+                        $invoice = new Facture($db);
+                        $fetchResult = $invoice->fetch(0, $ref);
+                        if ($fetchResult <= 0) {
+                            $this->errors[] = $invoice->error;
+                            $this->errors[]++;
+                        } else {
+                            $fetchResult = $invoice->fetch_thirdparty($invoice->socid);
+                        }
+
+                        $amount = price2num($invoice->total_ttc - ($invoice->getSommePaiement() + $invoice->getSumCreditNotesUsed() + $invoice->getSumDepositsUsed()));
+                        if (GETPOST("amount", 'alpha')) {
+                            $amount = GETPOST("amount", 'alpha');
+                        }
+
+                        $amount = price2num($amount);
+
+                        if (! GETPOST("currency", 'alpha')) {
+                            $currency = $conf->currency;
+                        } else {
+                            $currency = GETPOST("currency", 'aZ09');
+                        }
+
+                        $params = [
+                            'paymentmethod' => 'lyra',
+                            'amount' => $amount,
+                            'currency' => $currency,
+                            'tag' => GETPOST("tag", 'alpha'),
+                            'lyrapopin' => 1,
+                            'dopayment' => GETPOST('dopayment', 'alpha')
+                        ];
+
+                        // @phan-suppress-next-line PhanTypeMismatchArgumentNullable
+                        $reshook = $hookmanager->executeHooks('doPayment', $params, $object, $action);
+                        if ($reshook >= 0) {
+                            print $hookmanager->resPrint;
+
+                            $script = '<script>
+                                           $(document).ready(function() {
+                                               $("#div_dopayment_lyra").click(function(e) {
+                                                   $("#dolpaymenttable").show();
+                                                   KR.openPopin();
+                                                   e.stopPropagation();
+
+                                                   return false;
+                                               });
+                                           });
+                                       </script>';
+                        }
+                    }
+
+                    $result .= $script;
+
                     $this->resprints = $result;
                 }
 
@@ -131,11 +186,10 @@ class ActionsLyra
             }
         }
 
-        if (! $error) {
-            return 0; // Or return 1 to replace standard code.
+        if (! $this->error) {
+            return 0;
         }
 
-        $this->errors[] = 'Error message';
         return -1;
     }
 
@@ -148,20 +202,15 @@ class ActionsLyra
      * @param   HookManager      $hookmanager  Hook manager propagated to allow calling another hook
      * @return  int                            < 0 on error, 0 on success, 1 to replace standard code
      */
-    public function doValidatePayment($parameters, &$object, &$action, $hookmanager)
+    public function getValidPayment($parameters, &$object, &$action, $hookmanager)
     {
-        dol_include_once('/lyra/lib/lyra.lib.php');
+        global $langs;
 
-        global $conf, $langs;
-
-        if (in_array($parameters['currentcontext'], array('newpayment'))) { // Do something only for the context 'somecontext1' or 'somecontext2'.
-            $paymentmethod = $parameters['paymentmethod'];
-            if ((empty($paymentmethod) || $paymentmethod == 'lyra') && ! empty($conf->lyra->enabled)) {
-                if (lyraCanUseCurrency() || $conf->global->LYRA_CTX_MODE == 'TEST' || GETPOST('forcesandbox', 'int')) {
-                    $langs->load("lyra");
-                    $parameters['validpaymentmethod']['lyra'] = 'valid';
-                }
-            }
+        $paymentMethod = $parameters['paymentmethod'];
+        if ((empty($paymentMethod) || $paymentMethod == 'lyra') && isModEnabled('lyra')
+            && (lyraCanUseCurrency() || getDolGlobalString('LYRA_CTX_MODE') == 'TEST' || GETPOST('forcesandbox', 'int'))) {
+            $langs->load("lyra");
+            $parameters['validpaymentmethod']['lyra'] = 'valid';
         }
 
         return 0;
@@ -178,35 +227,36 @@ class ActionsLyra
      */
     public function doCheckStatus($parameters, &$object, &$action, $hookmanager)
     {
-        global $conf, $langs;
+        global $langs;
 
-        $error = 0; // Error counter.
-        if (in_array($parameters['currentcontext'], array('newpayment'))) { // Do something only for the context 'somecontext1' or 'somecontext2'.
-            $paymentmethod = $parameters['paymentmethod'];
+        $this->error = 0; // Error counter.
+        if (in_array($parameters['currentcontext'], array('newpayment'))) {
+            $paymentMethod = isset($parameters['paymentmethod']) ? $parameters['paymentmethod'] : '';
             $source = $parameters['source'];
             $object = $parameters['object'];
 
-            if ((empty($paymentmethod) || $paymentmethod == 'lyra') && ! empty($conf->lyra->enabled)) {
+            if ((empty($paymentMethod) || $paymentMethod == 'lyra') && isModEnabled('lyra')) {
                 if ($source == 'order' && $object->billed) {
-                    print '<br><br><span class="amountpaymentcomplete">' . $langs->trans("OrderBilledPending") . '</span>';
+                    print '<br><br><span class="amountpaymentcomplete">' . $langs->trans("OrderBilled") . '</span>';
                 }
 
                 if ($source == 'invoice' && strripos($object->note_private, '##')) { // The last appearance is found.
-                    print '<br><br><span class="amountpaymentcomplete">' . $langs->trans("LYRA_PENDING_PAYMENT_DESC") . '</span>';
+                    print '<br><br><span class="amountpaymentcomplete">' . $langs->trans("LYRA_PENDING_PAYMENT_MSG") . '</span>';
                     exit;
                 }
 
                 if ($source == 'donation' && $object->paid) {
-                    print '<br><br><span class="amountpaymentcomplete">' . $langs->trans("DonationPaidPending") . '</span>';
+                    print '<br><br><span class="amountpaymentcomplete">' . $langs->trans("DonationPaid") . '</span>';
                 }
             }
         }
 
-        if (! $error) {
-            return 0; // Or return 1 to replace standard code.
+        if (! $this->error) {
+            return 0;
         }
 
         $this->errors[] = 'Error message';
+
         return -1;
     }
 
@@ -221,29 +271,31 @@ class ActionsLyra
      */
     public function doPayment($parameters, &$object, &$action, $hookmanager)
     {
-        dol_include_once('/lyra/lib/lyra.lib.php');
         dol_include_once('/lyra/core/modules/modLyra.class.php');
 
-        global $conf;
+        if (in_array($parameters['currentcontext'], array('newpayment')) && isset($parameters['dopayment'])
+            && ($parameters['paymentmethod'] == 'lyra')) {
+            $tag = (empty($parameters['tag']) ? GETPOST("ref", 'alpha') : $parameters['tag']);
 
-        if (in_array($parameters['currentcontext'], array('newpayment'))) {
-            if ($parameters['paymentmethod'] == 'lyra') {
-                $tag = (empty($parameters['tag']) ? GETPOST("ref", 'alpha') : $parameters['tag']);
-
-                lyra_syslog("----------- Type Form " . $conf->global->LYRA_CARD_INFO_MODE . " -----------", $tag, LOG_INFO);
-
-                if ($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_FORM) {
+            try {
+                if (lyraEmbeddedPayment()) {
+                    lyraEmbeddedForm($tag, getDolGlobalString('LYRA_POPIN_MODE'), $parameters['amount']);
+                } else {
                     lyraRedirectForm($tag);
-                } elseif (($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_EMBEDDED) || ($conf->global->LYRA_CARD_INFO_MODE ==  modLyra::MODE_POPIN)) {
-                    $pop_in = (($conf->global->LYRA_CARD_INFO_MODE == modLyra::MODE_EMBEDDED) ? 0 : 1);
-                    lyraEmbeddedForm($tag, $pop_in);
+                }
+            } catch (Exception $e) {
+                if (! isset($parameters['lyrapopin'])) {
+                    print '<div id="lyra_error_message" class="center" style="margin-bottom: 25px; width: 100%; padding: 12px 0px 12px 25px; font-size: 1.3rem;">
+                        <span class="error">' .  $e->getMessage() . '</span>
+                    </div>';
                 }
 
-                return 0;
+                return -1;
             }
+
+            return 0;
         }
 
-        $this->errors[] = 'Error message';
         return -1;
     }
 }
